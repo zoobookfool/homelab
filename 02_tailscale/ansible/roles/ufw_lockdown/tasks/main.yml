@@ -1,0 +1,19 @@
+---
+- name: SSH の既存ルールを削除（全インターフェース向け）
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+    delete: true
+
+- name: Tailscale インターフェース経由の SSH のみ許可
+  ufw:
+    rule: allow
+    interface: tailscale0
+    direction: in
+    port: "22"
+    proto: tcp
+
+- name: UFW をリロード
+  ufw:
+    state: reloaded

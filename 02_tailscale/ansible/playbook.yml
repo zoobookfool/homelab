@@ -1,0 +1,8 @@
+---
+- name: Tailscale 導入・UFW 強化
+  hosts: all
+  become: true
+
+  roles:
+    - tailscale
+    - ufw_lockdown
