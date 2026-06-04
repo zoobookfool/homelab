@@ -1,0 +1,9 @@
+---
+- name: VPS セットアップ
+  hosts: vps
+  become: true
+
+  roles:
+    - tailscale
+    - ufw
+    - nginx

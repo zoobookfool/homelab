@@ -1,0 +1,36 @@
+# mastodon.conf.example
+# /etc/nginx/conf.d/mastodon.conf に配置する
+# example.com を実際のドメインに置き換えること
+
+server {
+    listen 80;
+    server_name mastodon.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name mastodon.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+    # Web
+    location / {
+        proxy_pass http://<自宅サーバのTailscale IP>:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_buffering off;
+    }
+
+    # Streaming API
+    location /api/v1/streaming {
+        proxy_pass http://<自宅サーバのTailscale IP>:4000;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_http_version 1.1;
+    }
+}

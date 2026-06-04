@@ -1,0 +1,49 @@
+---
+- name: UFW をインストール
+  apt:
+    name: ufw
+    state: present
+
+- name: デフォルトポリシーを設定
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+
+- name: HTTP（80）を許可（Let's Encrypt 用）
+  ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+
+- name: HTTPS（443）を許可
+  ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+
+- name: Factorio（34197/UDP）を許可
+  ufw:
+    rule: allow
+    port: "34197"
+    proto: udp
+
+- name: Windrose（7777/UDP）を許可
+  ufw:
+    rule: allow
+    port: "7777"
+    proto: udp
+
+- name: SSH は Tailscale 経由のみ許可
+  ufw:
+    rule: allow
+    interface: tailscale0
+    direction: in
+    port: "22"
+    proto: tcp
+
+- name: UFW を有効化
+  ufw:
+    state: enabled
