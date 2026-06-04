@@ -1,0 +1,23 @@
+---
+- name: UFW をインストール
+  apt:
+    name: ufw
+    state: present
+
+- name: デフォルトポリシーを設定（インバウンド拒否・アウトバウンド許可）
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+
+- name: SSH（22番ポート）を許可
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: UFW を有効化
+  ufw:
+    state: enabled

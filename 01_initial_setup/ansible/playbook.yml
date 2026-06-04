@@ -1,0 +1,8 @@
+---
+- name: 自宅サーバ初期設定
+  hosts: homeserver
+  become: true
+
+  roles:
+    - common
+    - ufw
