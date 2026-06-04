@@ -1,0 +1,7 @@
+.env
+*.key
+*.pem
+*vault*
+.DS_Store
+Thumbs.db
+*.swp
