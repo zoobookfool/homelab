@@ -1,0 +1,46 @@
+---
+- name: Docker・Docker Compose インストール
+  hosts: homeserver
+  become: true
+
+  tasks:
+    - name: 必要パッケージをインストール
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+        update_cache: true
+
+    - name: Docker 公式 GPG キーを追加
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Docker 公式リポジトリを追加
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu noble stable"
+        state: present
+
+    - name: Docker をインストール
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Docker を起動・自動起動設定
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: ユーザーを docker グループに追加
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true
