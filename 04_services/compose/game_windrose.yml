@@ -1,0 +1,21 @@
+name: windrose
+
+services:
+  windrose:
+    build:
+      context: ../services/game/windrose
+      dockerfile: Dockerfile
+    container_name: windrose
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - /opt/homelab/game/windrose:/server/data
+    ports:
+      - "${WINDROSE_PORT}:${WINDROSE_PORT}/udp"
+    networks:
+      - windrose
+
+networks:
+  windrose:
+    driver: bridge

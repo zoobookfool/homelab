@@ -1,0 +1,19 @@
+name: factorio
+
+services:
+  factorio:
+    image: factoriotools/factorio:stable
+    container_name: factorio
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - /opt/homelab/game/factorio:/factorio
+    ports:
+      - "34197:34197/udp"
+    networks:
+      - factorio
+
+networks:
+  factorio:
+    driver: bridge

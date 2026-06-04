@@ -1,0 +1,21 @@
+name: discord-bot
+
+services:
+  discord-bot:
+    build:
+      context: ../services/discord_bot
+      dockerfile: Dockerfile
+    container_name: discord-bot
+    restart: unless-stopped
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_NOTIFY_CHANNEL_ID=${DISCORD_NOTIFY_CHANNEL_ID}
+      - TZ=${TZ}
+    volumes:
+      - /opt/homelab/discord_bot:/app/data
+    networks:
+      - discord-bot
+
+networks:
+  discord-bot:
+    driver: bridge

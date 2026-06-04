@@ -1,0 +1,53 @@
+name: element
+
+services:
+  synapse-db:
+    image: postgres:16-alpine
+    container_name: synapse-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=synapse
+      - POSTGRES_USER=synapse
+      - POSTGRES_PASSWORD=${SYNAPSE_DB_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - /opt/homelab/element/postgres:/var/lib/postgresql/data
+    networks:
+      - element
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  synapse:
+    image: ghcr.io/element-hq/synapse:latest
+    container_name: synapse
+    restart: unless-stopped
+    environment:
+      - SYNAPSE_SERVER_NAME=${MATRIX_SERVER_NAME}
+      - SYNAPSE_REPORT_STATS=no
+    volumes:
+      - /opt/homelab/element/synapse:/data
+    ports:
+      - "8008:8008"
+    depends_on:
+      synapse-db:
+        condition: service_healthy
+    networks:
+      - element
+
+  element-web:
+    image: vectorim/element-web:latest
+    container_name: element-web
+    restart: unless-stopped
+    volumes:
+      - ../services/element/config.json:/app/config.json:ro
+    ports:
+      - "8080:80"
+    networks:
+      - element
+
+networks:
+  element:
+    driver: bridge
