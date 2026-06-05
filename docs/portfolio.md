@@ -7,7 +7,7 @@ Ansible・Docker Compose を使った自宅サーバの構成管理リポジト�
 
 - **Ansible による環境構築の自動化**：OS 設定・Docker 導入・サービス起動まで Playbook で管理
 - **監視ダッシュボード**：Prometheus + Grafana でサーバ・サービスのメトリクスを可視化
-- **手順書**：PC 操作ができるレベルの人が手順通りに実行すれば同じ環境を再現できる設計
+- **手順書**：手順通りに実行すれば同じ環境を再現できる設計
 
 ---
 
@@ -26,22 +26,29 @@ Ansible・Docker Compose を使った自宅サーバの構成管理リポジト�
 
 ---
 
-## アーキテクチャ
+## 構成図
 
+```mermaid
+graph TD
+    User([ユーザー])
+    DNS[DNS\nexample.com → VPS IP]
+    CF[Cloudflare\n将来: セキュリティ・CDN]
+    VPS[VPS ConoHa\nNginx リバースプロキシ\nUDP リレー]
+    TS{Tailscale\nプライベートネットワーク}
+    HomeServer[自宅サーバ Ubuntu 26.04 LTS\nDocker Compose 各サービス]
+    HomePC[自宅 PC\nローカル AI / Ansible 実行元]
+
+    User -->|HTTPS| DNS
+    User -->|UDP ゲームサーバ| DNS
+    DNS --> VPS
+    DNS -.->|将来| CF
+    CF -.->|将来| VPS
+    VPS <-->|Tailscale| HomeServer
+    HomeServer <-->|Tailscale| HomePC
 ```
-インターネット（ユーザー）
-    ↓ HTTPS / UDP
-VPS（ConoHa）
-    Nginx：HTTP/HTTPS のリバースプロキシ
-    iptables / Nginx stream：UDP ゲームサーバのリレー
-    ↓ Tailscale（プライベートネットワーク）
-自宅サーバ（Ubuntu 26.04 LTS）
-    Docker Compose：各サービスをコンテナで管理
-    ↓ Tailscale
-自宅 PC
-    ローカル AI（Ollama 等）
-    Ansible 実行元
-```
+
+> 現在は DNS が VPS の IP を直接返します。
+> 将来 Cloudflare のプロキシを有効にすると DNS が Cloudflare の IP を返すようになり、VPS の IP がユーザーに見えなくなります。
 
 ---
 
@@ -88,10 +95,25 @@ Tailscale の認証を突破しない限りサーバに触れない状態にな�
 
 ## 今後の予定
 
-### Cloudflare Tunnel への移行
+### Cloudflare 導入
 
-HTTP/HTTPS サービスを将来 Cloudflare Tunnel に移行予定です。
-UDP ゲームサーバは引き続き VPS 経由とします。
+- Cloudflare のプロキシを有効化し、VPS の IP を隠蔽してセキュリティを強化
+- HTTP/HTTPS サービスを Cloudflare Tunnel に移行し、VPS を経由しない構成も検討
+
+### 複数 DNS プロバイダ
+
+優先順位：冗長化 → ホップ数・遅延削減（学習目的） → サービス分離
+
+- プライマリ／セカンダリに異なる DNS プロバイダを設定し、障害時の可用性を確保
+- プロバイダごとの遅延・ルーティングの違いを検証
+
+### 複数 VPS（踏み台）
+
+優先順位：冗長化 → ホップ数・遅延削減（学習目的） → サービス分離
+
+- 踏み台 VPS を複数リージョンに配置し、1台が落ちても継続稼働できる構成
+- リージョンごとの遅延差を検証
+- 将来的にサービスごとに VPS を分離する構成も視野に
 
 ### サービスの追加予定
 
