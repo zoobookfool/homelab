@@ -1,6 +1,6 @@
 # 03 Docker
 
-自宅サーバに Docker・Docker Compose をインストールします。
+アプリサーバに Docker・Docker Compose をインストールします。
 
 ---
 
@@ -26,7 +26,7 @@ cat > 03_docker/ansible/inventory.ini << 'EOF'
 # 100.x.x.x ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 
 [homeserver]
-<自宅サーバのTailscale IP> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
+<アプリサーバのTailscale IP> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 EOF
 ```
 
@@ -58,10 +58,10 @@ Playbook が設定する内容：
 
 ## 3. 完了確認
 
-Ansible 完了後、自宅サーバに SSH 接続して確認します。
+Ansible 完了後、アプリサーバに SSH 接続して確認します。
 
 ```bash
-ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<自宅サーバのTailscale IP>
+ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<アプリサーバのTailscale IP>
 ```
 
 ```bash

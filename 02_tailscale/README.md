@@ -1,7 +1,9 @@
 # 02 Tailscale
 
-自宅サーバと VPS に Tailscale を導入し、プライベートネットワークを構築します。
+アプリサーバに Tailscale を導入し、プライベートネットワークを構築します。
 また UFW を強化し、Tailscale 経由以外のアクセスをすべて遮断します。
+
+> パターンB（踏み台あり）の場合、踏み台サーバへの Tailscale 導入は [05_vps](../05_vps/README.md) で行います。
 
 ---
 
@@ -52,17 +54,11 @@ cat > 02_tailscale/ansible/inventory.ini << 'EOF'
 # このファイルは秘匿情報を含むため Git にコミットしないこと（.gitignore で除外済み）
 #
 # 書き方の例：
-# [homeserver]
+# [app]
 # 192.168.1.100 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
-#
-# [vps]
-# 203.0.113.1 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 
-[homeserver]
-<自宅サーバのIPアドレス> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
-
-[vps]
-<VPSのIPアドレス> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
+[app]
+<アプリサーバのIPアドレス> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 EOF
 ```
 
@@ -70,7 +66,7 @@ EOF
 
 ## 2. Ansible の実行
 
-### 2-1. Tailscale の導入（自宅サーバ・VPS 両方）
+### 2-1. Tailscale の導入
 
 ```bash
 cd 02_tailscale/ansible
@@ -94,7 +90,7 @@ Playbook が設定する内容：
 
 ### 3-1. Tailscale 管理画面で確認
 
-https://login.tailscale.com/admin/machines を開き、自宅サーバと VPS が表示されていることを確認します。
+https://login.tailscale.com/admin/machines を開き、アプリサーバが表示されていることを確認します。
 
 ### 3-2. Tailscale 経由で SSH 接続確認
 

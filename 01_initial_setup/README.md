@@ -1,63 +1,69 @@
 # 01 Initial Setup
 
-Ubuntu Server 26.04 LTS のインストール直後に行う初期設定です。
+アプリサーバの Ubuntu Server 26.04 LTS インストール直後に行う初期設定です。
 この手順完了後、Ansible で自動設定できる状態になります。
 
 ---
 
 ## 前提条件
 
-- 自宅サーバに Ubuntu Server 26.04 LTS がインストール済みであること
-- 自宅サーバにモニター・キーボードが接続されており、物理操作できること
-- 自宅 PC に以下がインストール済みであること
+- アプリサーバに Ubuntu Server 26.04 LTS がインストール済みであること
+- 操作端末に以下がインストール済みであること
   - Git（GitHub 管理用）
   - WSL2 + Ubuntu（Ansible 実行用）
   - Windows Terminal（WSL2 の操作用）
-- 自宅 PC と自宅サーバが同じネットワーク（LAN）に接続されていること
-
-> ⚠️ この手順は自宅サーバへの **物理アクセスが必要な最初で最後の手順** です。
-> 02_tailscale 完了後はすべての操作をリモートから行います。
 
 ---
 
-## 1. 自宅サーバの初期設定（物理操作）
+## 1. アプリサーバへの初期接続
 
-### 1-1. ログイン
+サーバの種別によって初期接続方法が異なります。
 
-Ubuntu Server のインストール時に作成したユーザーでログインします。
+### アプリサーバの場合（物理操作）
+
+> ⚠️ アプリサーバへの **物理アクセスが必要な最初で最後の手順** です。
+> 02_tailscale 完了後はすべての操作をリモートから行います。
+
+モニター・キーボードをサーバに接続し、インストール時に作成したユーザーでログインします。
 
 ```
 login: <インストール時に設定したユーザー名>
 password: <インストール時に設定したパスワード>
 ```
 
-### 1-2. IP アドレスの確認
-
-自宅 PC から SSH 接続するために、自宅サーバの IP アドレスを確認します。
+IP アドレスを確認してメモします。
 
 ```bash
 ip a
+# inet 192.168.x.x のような行を探す
 ```
 
-`inet 192.168.x.x` のような行を探してメモしておきます。
-
-### 1-3. SSH サーバの確認
-
-Ubuntu Server 26.04 LTS はインストール時に OpenSSH Server を選択していれば起動済みです。
-確認するには：
+SSH サーバが起動していることを確認します。
 
 ```bash
 sudo systemctl status ssh
 ```
 
 `active (running)` と表示されていれば OK です。
-表示されない場合はインストールします：
+表示されない場合はインストールします。
 
 ```bash
-sudo apt update
-sudo apt install -y openssh-server
+sudo apt update && sudo apt install -y openssh-server
 sudo systemctl enable --now ssh
 ```
+
+### VPS / AWS の場合（コンソール操作）
+
+プロバイダの管理画面からウェブコンソール（またはシリアルコンソール）を開き、公開鍵を登録します。
+
+```bash
+mkdir -p ~/.ssh
+echo "<id_ed25519_homelab.pub の内容>" >> ~/.ssh/authorized_keys
+chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys
+```
+
+> 💡 公開鍵は後述の手順 3 で作成します。先にキーを作成してから公開鍵を登録してください。
+> サーバの IP アドレスはプロバイダの管理画面で確認できます。
 
 ---
 
@@ -100,16 +106,16 @@ ssh-keygen -t ed25519 -C "homelab-server" -f ~/.ssh/id_ed25519_homelab
 
 パスフレーズは任意です（Ansible の自動実行を考えると空でもよいです）。
 
-### 3-1. 公開鍵を自宅サーバに登録
+### 3-1. 公開鍵をアプリサーバに登録
 
 ```bash
-ssh-copy-id -i ~/.ssh/id_ed25519_homelab.pub <ユーザー名>@<自宅サーバのIPアドレス>
+ssh-copy-id -i ~/.ssh/id_ed25519_homelab.pub <ユーザー名>@<アプリサーバのIPアドレス>
 ```
 
 ### 3-2. 接続確認
 
 ```bash
-ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<自宅サーバのIPアドレス>
+ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<アプリサーバのIPアドレス>
 ```
 
 パスワードなしで接続できれば OK です。
@@ -147,7 +153,7 @@ cat > 01_initial_setup/ansible/inventory.ini << 'EOF'
 # 203.0.113.1 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 
 [homeserver]
-<自宅サーバのIPアドレス> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
+<アプリサーバのIPアドレス> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 EOF
 ```
 
@@ -158,7 +164,7 @@ cd 01_initial_setup/ansible
 ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
 ```
 
-パスワードを聞かれたら自宅サーバのパスワードを入力します。
+パスワードを聞かれたらアプリサーバのパスワードを入力します。
 
 ---
 
@@ -179,7 +185,7 @@ ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
 Playbook が正常終了したら、改めて SSH 接続できることを確認します。
 
 ```bash
-ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<自宅サーバのIPアドレス>
+ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<アプリサーバのIPアドレス>
 ```
 
 接続できれば `02_tailscale` に進みます。

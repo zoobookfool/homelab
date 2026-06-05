@@ -18,8 +18,8 @@ Docker Compose で各サービスを起動します。
 | Element | **必須・後から変更不可** | 不要 | Matrix フェデレーションのため |
 | Discord Bot | 不要 | 不要 | Discord Developer Portal でトークン取得が必要 |
 | ローカル AI 踏み台 | 任意 | 不要 | 自宅 PC で Ollama 等が起動していること |
-| Factorio | 不要 | 不要 | VPS で UDP 34197 の開放が必要 |
-| Windrose（UE5） | 不要 | 不要 | VPS で UDP 7777 の開放・Dedicated Server バイナリが必要 |
+| Factorio | 不要 | 不要 | UDP 34197 の開放が必要（踏み台 or アプリサーバ） |
+| Windrose（UE5） | 不要 | 不要 | UDP 7777 の開放・Dedicated Server バイナリが必要（踏み台 or アプリサーバ） |
 
 ---
 
@@ -59,9 +59,16 @@ GRAFANA_ADMIN_PASSWORD=<任意のパスワード>
 make up-monitoring
 ```
 
-### 4. VPS の Nginx 設定を追加する（外部公開する場合）
+### 4. 外部公開の設定をする（外部公開する場合）
 
-[05_vps](../05_vps/README.md) を参照して、起動したサービスに対応する Nginx 設定を追加します。
+構成パターンに応じて次の手順に進みます。
+
+| パターン | 次の手順 |
+|---|---|
+| パターンA（踏み台なし） | [05_nginx](../05_nginx/README.md)：アプリサーバに Nginx を直接設定する |
+| パターンB（踏み台あり） | [05_vps](../05_vps/README.md)：踏み台サーバに Nginx を設定する |
+
+外部公開しない場合（監視・Discord Bot・AI 踏み台のみ）は 05 の手順は不要です。
 
 ---
 
@@ -148,4 +155,6 @@ docker compose -f compose/element.yml run --rm synapse generate
 
 ## 次の手順
 
-→ [05_vps](../05_vps/README.md)
+- パターンA（踏み台なし）で外部公開する → [05_nginx](../05_nginx/README.md)
+- パターンB（踏み台あり）で外部公開する → [05_vps](../05_vps/README.md)
+- 外部公開しない → [06_backup](../06_backup/README.md)
