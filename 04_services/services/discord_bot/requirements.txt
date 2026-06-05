@@ -1,0 +1,11 @@
+# Discord Bot の依存パッケージ
+# pip install -r requirements.txt でインストールされます
+
+# Discord API ライブラリ
+discord.py>=2.3.0
+
+# HTTP クライアント（サービス死活確認用）
+aiohttp>=3.9.0
+
+# 環境変数管理
+python-dotenv>=1.0.0
