@@ -1,6 +1,6 @@
 ---
 - name: Docker・Docker Compose インストール
-  hosts: homeserver
+  hosts: app
   become: true
 
   tasks:

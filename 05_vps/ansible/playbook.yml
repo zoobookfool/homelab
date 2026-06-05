@@ -1,6 +1,6 @@
 ---
 - name: VPS セットアップ
-  hosts: vps
+  hosts: relay
   become: true
 
   roles:

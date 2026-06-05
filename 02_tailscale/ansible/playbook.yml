@@ -1,6 +1,6 @@
 ---
 - name: Tailscale 導入・UFW 強化
-  hosts: all
+  hosts: app
   become: true
 
   roles:

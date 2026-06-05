@@ -1,6 +1,6 @@
 ---
-- name: 自宅サーバ初期設定
-  hosts: homeserver
+- name: アプリサーバ初期設定
+  hosts: app
   become: true
 
   roles:
