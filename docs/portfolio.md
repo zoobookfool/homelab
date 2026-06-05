@@ -18,6 +18,7 @@ Ansible・Docker Compose を使った自宅サーバの構成管理リポジト�
 | 構成管理 | Ansible |
 | コンテナ | Docker・Docker Compose |
 | ネットワーク | Tailscale |
+| DNS・セキュリティ | Cloudflare |
 | 監視 | Prometheus・Grafana・Node Exporter |
 | リバースプロキシ | Nginx |
 | SSL | Let's Encrypt（Certbot） |
@@ -31,24 +32,22 @@ Ansible・Docker Compose を使った自宅サーバの構成管理リポジト�
 ```mermaid
 graph TD
     User([ユーザー])
-    DNS[DNS\nexample.com → VPS IP]
-    CF[Cloudflare\n将来: セキュリティ・CDN]
+    Tablet([外出先タブレット])
+    CF[Cloudflare\nDNS・セキュリティ・CDN]
     VPS[VPS ConoHa\nNginx リバースプロキシ\nUDP リレー]
-    TS{Tailscale\nプライベートネットワーク}
     HomeServer[自宅サーバ Ubuntu 26.04 LTS\nDocker Compose 各サービス]
     HomePC[自宅 PC\nローカル AI / Ansible 実行元]
 
-    User -->|HTTPS| DNS
-    User -->|UDP ゲームサーバ| DNS
-    DNS --> VPS
-    DNS -.->|将来| CF
-    CF -.->|将来| VPS
+    User -->|HTTPS| CF
+    User -->|UDP ゲームサーバ| VPS
+    CF -->|プロキシ| VPS
     VPS <-->|Tailscale| HomeServer
     HomeServer <-->|Tailscale| HomePC
+    Tablet -->|Tailscale| HomeServer
 ```
 
-> 現在は DNS が VPS の IP を直接返します。
-> 将来 Cloudflare のプロキシを有効にすると DNS が Cloudflare の IP を返すようになり、VPS の IP がユーザーに見えなくなります。
+> HTTP/HTTPS は Cloudflare のプロキシ経由で VPS に到達するため、VPS の IP はユーザーに公開されません。
+> 外出先タブレットは Tailscale 経由で自宅サーバに直接アクセスできます。
 
 ---
 
@@ -56,7 +55,7 @@ graph TD
 
 ### Tailscale
 
-VPN として WireGuard や SSH リバーストンネルも検討しましたが、以下の理由で Tailscale を選択しました。
+VPN として WireGuard も検討しましたが、以下の理由で Tailscale を選択しました。
 
 - セットアップが簡単（認証キー1つでノードが参加できる）
 - ノード間の Tailscale IP が固定されるため、inventory.ini の管理が楽
@@ -79,6 +78,12 @@ VPN として WireGuard や SSH リバーストンネルも検討しましたが
 - 冪等性があるため、復旧時に安心して何度でも実行できる
 - 実行元を自宅 PC に統一することで、サーバ側の依存を最小化
 
+### Cloudflare
+
+- DNS プロバイダとして利用し、プロキシを有効化することで VPS の IP を隠蔽
+- DDoS 対策・WAF などのセキュリティ機能を無償で利用可能
+- CDN としてキャッシュを活用し、自宅サーバへのリクエストを削減
+
 ### VPS をリバースプロキシ専用にした理由
 
 - 自宅の IP アドレスを直接公開しないため、セキュリティリスクを軽減できる
@@ -95,24 +100,21 @@ Tailscale の認証を突破しない限りサーバに触れない状態にな�
 
 ## 今後の予定
 
-### Cloudflare 導入
+### Cloudflare Tunnel への移行
 
-- Cloudflare のプロキシを有効化し、VPS の IP を隠蔽してセキュリティを強化
-- HTTP/HTTPS サービスを Cloudflare Tunnel に移行し、VPS を経由しない構成も検討
+HTTP/HTTPS サービスを Cloudflare Tunnel に移行し、VPS を経由しない構成を検討しています。
+UDP ゲームサーバは引き続き VPS 経由とします。
 
 ### 複数 DNS プロバイダ
 
-優先順位：冗長化 → ホップ数・遅延削減（学習目的） → サービス分離
-
 - プライマリ／セカンダリに異なる DNS プロバイダを設定し、障害時の可用性を確保
-- プロバイダごとの遅延・ルーティングの違いを検証
+- プロバイダごとの遅延・管理画面の使い勝手・機能の違いを検証
+- 複数ドメインの取得・ドメイン移管・変更も検討中
 
 ### 複数 VPS（踏み台）
 
-優先順位：冗長化 → ホップ数・遅延削減（学習目的） → サービス分離
-
-- 踏み台 VPS を複数リージョンに配置し、1台が落ちても継続稼働できる構成
-- リージョンごとの遅延差を検証
+- 異なるプロバイダの VPS を並行運用し、1台が落ちても継続稼働できる構成
+- プロバイダごとのネットワーク品質・遅延・使い勝手の違いを検証
 - 将来的にサービスごとに VPS を分離する構成も視野に
 
 ### サービスの追加予定
