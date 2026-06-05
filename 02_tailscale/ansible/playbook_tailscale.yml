@@ -1,0 +1,7 @@
+---
+- name: Tailscale 導入
+  hosts: app
+  become: true
+
+  roles:
+    - tailscale
