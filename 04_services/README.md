@@ -1,59 +1,84 @@
 # 04 Services
 
 Docker Compose で各サービスを起動します。
+使いたいサービスだけを選んで起動できます。
 
 ---
 
 ## 前提条件
 
-- [03_docker](../03_docker/README.md) が完了していること
-- `.env` ファイルを作成済みであること（→ [.env の設定](#env-の設定)）
-- 自宅 PC が Tailscale に接続済みであること
+[03_docker](../03_docker/README.md) が完了していること。
+
+### サービスごとの前提条件
+
+| サービス | ドメイン | 外部SMTP | 特記事項 |
+|---|---|---|---|
+| 監視ダッシュボード | 任意 | 不要 | ドメインなしでも Tailscale 経由でアクセス可 |
+| Mastodon | **必須・後から変更不可** | **必須** | ActivityPub のため |
+| Element | **必須・後から変更不可** | 不要 | Matrix フェデレーションのため |
+| Discord Bot | 不要 | 不要 | Discord Developer Portal でトークン取得が必要 |
+| ローカル AI 踏み台 | 任意 | 不要 | 自宅 PC で Ollama 等が起動していること |
+| Factorio | 不要 | 不要 | VPS で UDP 34197 の開放が必要 |
+| Windrose（UE5） | 不要 | 不要 | VPS で UDP 7777 の開放・Dedicated Server バイナリが必要 |
 
 ---
 
 ## .env の設定
 
-`.env.example` をコピーして `.env` を作成し、各値を設定します。
+`.env.example` をコピーして `.env` を作成し、**起動するサービスに必要な項目だけ**設定します。
 `.env` は **Git にコミットしません**（`.gitignore` で除外済み）。
 
 ```bash
 cp .env.example .env
 ```
 
-エディタで `.env` を開いて各値を設定してください。
-設定項目の詳細は `.env.example` のコメントを参照してください。
-
 ---
 
-## サービス一覧
+## 使いたいサービスを選んで構築する
 
-| サービス | ドメイン例 | 起動コマンド |
-|---|---|---|
-| 監視ダッシュボード | `monitoring.example.com` | `make up-monitoring` |
-| Mastodon | `mastodon.example.com` | `make up-mastodon` |
-| Element | `element.example.com` | `make up-element` |
-| Discord Bot | - | `make up-discord-bot` |
-| ローカル AI 踏み台 | `ai.example.com` | `make up-ai-proxy` |
-| Factorio サーバ | - | `make up-game-factorio` |
-| Windrose（UE5） | - | `make up-game-windrose` |
+### 1. 起動するサービスを決める
+
+上の前提条件テーブルを確認し、起動するサービスを決めます。
+
+### 2. .env に必要な項目を設定する
+
+`.env` を開き、起動するサービスに対応するセクションの項目を埋めます。
+**起動しないサービスの項目は空欄のままで構いません。**
+
+例：監視ダッシュボードだけ起動する場合に必要な設定：
+
+```bash
+DOMAIN=example.com
+TZ=Asia/Tokyo
+GRAFANA_ADMIN_PASSWORD=<任意のパスワード>
+```
+
+### 3. サービスを起動する
+
+```bash
+make up-monitoring
+```
+
+### 4. VPS の Nginx 設定を追加する（外部公開する場合）
+
+[05_vps](../05_vps/README.md) を参照して、起動したサービスに対応する Nginx 設定を追加します。
 
 ---
 
 ## 起動コマンド一覧
 
 ```bash
+# 個別に起動
+make up-monitoring       # 監視ダッシュボード
+make up-mastodon         # Mastodon
+make up-element          # Element
+make up-discord-bot      # Discord Bot
+make up-ai-proxy         # ローカル AI 踏み台
+make up-game-factorio    # Factorio サーバ
+make up-game-windrose    # Windrose（UE5）サーバ
+
 # 常時起動サービスをまとめて起動
 make up-core
-
-# サービスを個別に起動
-make up-monitoring
-make up-mastodon
-make up-element
-make up-discord-bot
-make up-ai-proxy
-make up-game-factorio
-make up-game-windrose
 
 # すべて起動
 make up-all
@@ -74,11 +99,11 @@ make logs-monitoring
 
 ---
 
-## 初回起動時の注意
+## 初回起動時の追加手順
 
 ### Mastodon
 
-初回のみデータベースのセットアップが必要です。
+データベースのセットアップ：
 
 ```bash
 make up-mastodon
@@ -94,7 +119,7 @@ docker compose -f compose/mastodon.yml run --rm web bin/tootctl accounts create 
 
 ### Element（Matrix Synapse）
 
-初回のみ設定ファイルの生成が必要です。
+設定ファイルの生成：
 
 ```bash
 docker compose -f compose/element.yml run --rm synapse generate
@@ -118,9 +143,6 @@ docker compose -f compose/element.yml run --rm synapse generate
     ├── factorio/
     └── windrose/
 ```
-
-> 💡 バックアップ対象は `/opt/homelab/` 以下です。
-> 詳細は [06_backup](../06_backup/README.md) を参照してください。
 
 ---
 
