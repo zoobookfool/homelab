@@ -1,0 +1,8 @@
+---
+- name: アプリサーバ Nginx セットアップ（パターンA）
+  hosts: app
+  become: true
+
+  roles:
+    - ufw
+    - nginx

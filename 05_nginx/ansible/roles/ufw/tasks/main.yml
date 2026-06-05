@@ -1,0 +1,30 @@
+---
+- name: HTTP（80）を許可（Let's Encrypt 用）
+  ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+
+- name: HTTPS（443）を許可
+  ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+
+- name: Factorio（34197/UDP）を許可
+  ufw:
+    rule: allow
+    port: "34197"
+    proto: udp
+  when: open_game_ports | default(false)
+
+- name: Windrose（7777/UDP）を許可
+  ufw:
+    rule: allow
+    port: "7777"
+    proto: udp
+  when: open_game_ports | default(false)
+
+- name: UFW をリロード
+  ufw:
+    state: reloaded

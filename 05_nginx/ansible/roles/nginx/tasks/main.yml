@@ -1,0 +1,41 @@
+---
+- name: Nginx をインストール
+  apt:
+    name: nginx
+    state: present
+    update_cache: true
+
+- name: Certbot をインストール
+  apt:
+    name:
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Nginx を起動・自動起動設定
+  systemd:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Nginx 設定ファイルを配置
+  template:
+    src: "{{ item }}.conf.j2"
+    dest: "/etc/nginx/conf.d/{{ item }}.conf"
+    mode: "0644"
+  loop:
+    - mastodon
+    - element
+    - monitoring
+    - ai_proxy
+  notify: nginx reload
+
+- name: Nginx の設定テスト
+  command: nginx -t
+  changed_when: false
+
+handlers:
+  - name: nginx reload
+    systemd:
+      name: nginx
+      state: reloaded

@@ -24,73 +24,62 @@
 
 ---
 
-## 1. UFW のポート開放
+## 1. inventory ファイルの作成
 
-02_tailscale で全ポートを Tailscale 経由のみに制限しているため、HTTP / HTTPS を外部に開放します。
-アプリサーバに SSH 接続して実行します。
+`05_nginx/ansible/` に `inventory.ini` を作成します。
+このファイルは **Git にコミットしません**（`.gitignore` で除外済み）。
+
+```bash
+cat > 05_nginx/ansible/inventory.ini << 'EOF'
+# Ansible inventory ファイル
+# このファイルは秘匿情報を含むため Git にコミットしないこと（.gitignore で除外済み）
+#
+# 書き方の例：
+# [app]
+# 100.x.x.x ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
+
+[app]
+<アプリサーバのTailscale IP> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
+EOF
+```
+
+---
+
+## 2. Ansible の実行
+
+```bash
+cd 05_nginx/ansible
+ansible-playbook -i inventory.ini playbook.yml --ask-become-pass \
+  -e "domain=<取得したドメイン名>"
+```
+
+ゲームサーバ（Factorio・Windrose）の UDP ポートも開放する場合は `-e "open_game_ports=true"` を追加します。
+
+```bash
+ansible-playbook -i inventory.ini playbook.yml --ask-become-pass \
+  -e "domain=<取得したドメイン名>" \
+  -e "open_game_ports=true"
+```
+
+Playbook が設定する内容：
+
+| 設定項目 | 内容 |
+|---|---|
+| UFW 設定 | HTTP(80)・HTTPS(443) を外部に開放 |
+| UFW 設定 | ゲーム UDP ポートを開放（`open_game_ports=true` 時のみ） |
+| Nginx インストール | 公式リポジトリから導入 |
+| Certbot インストール | Let's Encrypt による SSL 証明書の自動取得・更新 |
+| Nginx 設定 | 各サービスのリバースプロキシ設定を配置 |
+
+---
+
+## 3. SSL 証明書の取得
+
+Ansible 完了後、アプリサーバに SSH 接続して証明書を取得します。
 
 ```bash
 ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<アプリサーバのTailscale IP>
 ```
-
-```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw reload
-sudo ufw status
-```
-
-ゲームサーバを使う場合は UDP ポートも開放します。
-
-```bash
-# Factorio
-sudo ufw allow 34197/udp
-
-# Windrose（UE5）
-sudo ufw allow 7777/udp
-```
-
----
-
-## 2. Nginx・Certbot のインストール
-
-```bash
-sudo apt update
-sudo apt install -y nginx certbot python3-certbot-nginx
-sudo systemctl enable --now nginx
-```
-
----
-
-## 3. Nginx の設定
-
-各サービスの設定ファイルを `/etc/nginx/conf.d/` に配置します。
-設定例は `roles/nginx/` 以下にあります。
-
-```
-roles/nginx/
-├── mastodon.conf.example
-├── element.conf.example
-├── monitoring.conf.example
-└── ai_proxy.conf.example
-```
-
-設定例をコピーして編集します（`example.com` を自分のドメインに置き換えます）。
-
-```bash
-sudo cp /path/to/mastodon.conf.example /etc/nginx/conf.d/mastodon.conf
-sudo nano /etc/nginx/conf.d/mastodon.conf
-```
-
-設定を反映します。
-
-```bash
-sudo nginx -t && sudo systemctl reload nginx
-```
-
----
-
-## 4. SSL 証明書の取得
 
 ```bash
 # ワイルドカード証明書を取得（全サブドメインに対応）
@@ -102,7 +91,7 @@ sudo certbot --nginx -d example.com -d "*.example.com" --agree-tos
 
 ---
 
-## 5. 完了確認
+## 4. 完了確認
 
 ブラウザで以下にアクセスして動作を確認します。
 
@@ -112,6 +101,20 @@ sudo certbot --nginx -d example.com -d "*.example.com" --agree-tos
 | `https://mastodon.example.com` | Mastodon のトップ画面 |
 | `https://element.example.com` | Element のログイン画面 |
 | `https://ai.example.com` | AI プロキシ（Ollama API） |
+
+---
+
+## Nginx 設定ファイルの場所
+
+各サービスの Nginx 設定例は `roles/nginx/` 以下にあります。
+
+```
+roles/nginx/
+├── mastodon.conf.example
+├── element.conf.example
+├── monitoring.conf.example
+└── ai_proxy.conf.example
+```
 
 ---
 
