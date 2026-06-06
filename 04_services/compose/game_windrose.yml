@@ -10,7 +10,7 @@ services:
     environment:
       - TZ=${TZ}
     volumes:
-      - /opt/homelab/game/windrose:/server/data
+      - /opt/homelab/game/windrose:/server/R5/Saved
     ports:
       - "${WINDROSE_PORT}:${WINDROSE_PORT}/udp"
     networks:

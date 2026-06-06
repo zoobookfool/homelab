@@ -28,15 +28,15 @@ ALL_SERVICES = \
 
 .PHONY: up-core
 up-core:
-	$(COMPOSE)$(CORE_SERVICES) up -d
+	$(COMPOSE) $(CORE_SERVICES) up -d
 
 .PHONY: up-all
 up-all:
-	$(COMPOSE)$(ALL_SERVICES) up -d
+	$(COMPOSE) $(ALL_SERVICES) up -d
 
 .PHONY: down
 down:
-	$(COMPOSE)$(ALL_SERVICES) down
+	$(COMPOSE) $(ALL_SERVICES) down
 
 # -------------------------------------------------------------
 # 監視ダッシュボード
@@ -44,15 +44,15 @@ down:
 
 .PHONY: up-monitoring
 up-monitoring:
-	$(COMPOSE)-f compose/monitoring.yml up -d
+	$(COMPOSE) -f compose/monitoring.yml up -d
 
 .PHONY: down-monitoring
 down-monitoring:
-	$(COMPOSE)-f compose/monitoring.yml down
+	$(COMPOSE) -f compose/monitoring.yml down
 
 .PHONY: logs-monitoring
 logs-monitoring:
-	$(COMPOSE)-f compose/monitoring.yml logs -f
+	$(COMPOSE) -f compose/monitoring.yml logs -f
 
 # -------------------------------------------------------------
 # Mastodon
@@ -60,15 +60,15 @@ logs-monitoring:
 
 .PHONY: up-mastodon
 up-mastodon:
-	$(COMPOSE)-f compose/mastodon.yml up -d
+	$(COMPOSE) -f compose/mastodon.yml up -d
 
 .PHONY: down-mastodon
 down-mastodon:
-	$(COMPOSE)-f compose/mastodon.yml down
+	$(COMPOSE) -f compose/mastodon.yml down
 
 .PHONY: logs-mastodon
 logs-mastodon:
-	$(COMPOSE)-f compose/mastodon.yml logs -f
+	$(COMPOSE) -f compose/mastodon.yml logs -f
 
 # -------------------------------------------------------------
 # Element（Matrix）
@@ -76,15 +76,15 @@ logs-mastodon:
 
 .PHONY: up-element
 up-element:
-	$(COMPOSE)-f compose/element.yml up -d
+	$(COMPOSE) -f compose/element.yml up -d
 
 .PHONY: down-element
 down-element:
-	$(COMPOSE)-f compose/element.yml down
+	$(COMPOSE) -f compose/element.yml down
 
 .PHONY: logs-element
 logs-element:
-	$(COMPOSE)-f compose/element.yml logs -f
+	$(COMPOSE) -f compose/element.yml logs -f
 
 # -------------------------------------------------------------
 # Discord Bot
@@ -92,15 +92,15 @@ logs-element:
 
 .PHONY: up-discord-bot
 up-discord-bot:
-	$(COMPOSE)-f compose/discord_bot.yml up -d
+	$(COMPOSE) -f compose/discord_bot.yml up -d
 
 .PHONY: down-discord-bot
 down-discord-bot:
-	$(COMPOSE)-f compose/discord_bot.yml down
+	$(COMPOSE) -f compose/discord_bot.yml down
 
 .PHONY: logs-discord-bot
 logs-discord-bot:
-	$(COMPOSE)-f compose/discord_bot.yml logs -f
+	$(COMPOSE) -f compose/discord_bot.yml logs -f
 
 # -------------------------------------------------------------
 # ローカル AI 踏み台
@@ -108,15 +108,15 @@ logs-discord-bot:
 
 .PHONY: up-ai-proxy
 up-ai-proxy:
-	$(COMPOSE)-f compose/ai_proxy.yml up -d
+	$(COMPOSE) -f compose/ai_proxy.yml up -d
 
 .PHONY: down-ai-proxy
 down-ai-proxy:
-	$(COMPOSE)-f compose/ai_proxy.yml down
+	$(COMPOSE) -f compose/ai_proxy.yml down
 
 .PHONY: logs-ai-proxy
 logs-ai-proxy:
-	$(COMPOSE)-f compose/ai_proxy.yml logs -f
+	$(COMPOSE) -f compose/ai_proxy.yml logs -f
 
 # -------------------------------------------------------------
 # ゲームサーバ（Factorio）
@@ -124,15 +124,15 @@ logs-ai-proxy:
 
 .PHONY: up-game-factorio
 up-game-factorio:
-	$(COMPOSE)-f compose/game_factorio.yml up -d
+	$(COMPOSE) -f compose/game_factorio.yml up -d
 
 .PHONY: down-game-factorio
 down-game-factorio:
-	$(COMPOSE)-f compose/game_factorio.yml down
+	$(COMPOSE) -f compose/game_factorio.yml down
 
 .PHONY: logs-game-factorio
 logs-game-factorio:
-	$(COMPOSE)-f compose/game_factorio.yml logs -f
+	$(COMPOSE) -f compose/game_factorio.yml logs -f
 
 # -------------------------------------------------------------
 # ゲームサーバ（Windrose / UE5）
@@ -140,12 +140,12 @@ logs-game-factorio:
 
 .PHONY: up-game-windrose
 up-game-windrose:
-	$(COMPOSE)-f compose/game_windrose.yml up -d
+	$(COMPOSE) -f compose/game_windrose.yml up -d
 
 .PHONY: down-game-windrose
 down-game-windrose:
-	$(COMPOSE)-f compose/game_windrose.yml down
+	$(COMPOSE) -f compose/game_windrose.yml down
 
 .PHONY: logs-game-windrose
 logs-game-windrose:
-	$(COMPOSE)-f compose/game_windrose.yml logs -f
+	$(COMPOSE) -f compose/game_windrose.yml logs -f
