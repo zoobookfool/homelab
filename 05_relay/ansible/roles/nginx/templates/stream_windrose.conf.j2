@@ -1,0 +1,11 @@
+server {
+    listen 7777 udp;
+    proxy_pass {{ app_server_ip }}:7777;
+    proxy_timeout 30s;
+}
+
+server {
+    listen 7777;
+    proxy_pass {{ app_server_ip }}:7777;
+    proxy_timeout 30s;
+}

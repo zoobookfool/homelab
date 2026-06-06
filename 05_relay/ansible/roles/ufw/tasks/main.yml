@@ -12,29 +12,40 @@
     - { direction: incoming, policy: deny }
     - { direction: outgoing, policy: allow }
 
-- name: HTTP（80）を許可（Let's Encrypt 用）
+- name: HTTP（80）を許可（Let's Encrypt 用・ドメインあり）
   ufw:
     rule: allow
     port: "80"
     proto: tcp
+  when: domain | length > 0
 
-- name: HTTPS（443）を許可
+- name: HTTPS（443）を許可（ドメインあり）
   ufw:
     rule: allow
     port: "443"
     proto: tcp
+  when: domain | length > 0
 
 - name: Factorio（34197/UDP）を許可
   ufw:
     rule: allow
     port: "34197"
     proto: udp
+  when: relay_factorio
 
 - name: Windrose（7777/UDP）を許可
   ufw:
     rule: allow
     port: "7777"
     proto: udp
+  when: relay_windrose
+
+- name: Windrose（7777/TCP）を許可
+  ufw:
+    rule: allow
+    port: "7777"
+    proto: tcp
+  when: relay_windrose
 
 - name: SSH は Tailscale 経由のみ許可
   ufw:

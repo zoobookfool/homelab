@@ -5,20 +5,23 @@
     state: present
     update_cache: true
 
-- name: Certbot をインストール
-  apt:
-    name:
-      - certbot
-      - python3-certbot-nginx
-    state: present
-
 - name: Nginx を起動・自動起動設定
   systemd:
     name: nginx
     state: started
     enabled: true
 
-- name: Nginx 設定ファイルを配置
+# ---- HTTP リバースプロキシ（ドメインあり） ----
+
+- name: Certbot をインストール（ドメインあり）
+  apt:
+    name:
+      - certbot
+      - python3-certbot-nginx
+    state: present
+  when: domain | length > 0
+
+- name: Nginx 設定ファイルを配置（ドメインあり）
   template:
     src: "{{ item }}.conf.j2"
     dest: "/etc/nginx/conf.d/{{ item }}.conf"
@@ -28,14 +31,66 @@
     - element
     - monitoring
     - ai_proxy
+  when: domain | length > 0
+  notify: nginx reload
+
+# ---- UDP / TCP リレー（ゲームサーバ） ----
+
+- name: Nginx stream モジュールをインストール
+  apt:
+    name: libnginx-mod-stream
+    state: present
+  when: relay_factorio or relay_windrose
+
+- name: stream.d ディレクトリを作成
+  file:
+    path: /etc/nginx/stream.d
+    state: directory
+    mode: "0755"
+  when: relay_factorio or relay_windrose
+
+- name: nginx.conf に stream ブロックを追加
+  blockinfile:
+    path: /etc/nginx/nginx.conf
+    marker: "# {mark} ANSIBLE MANAGED STREAM BLOCK"
+    block: |
+      stream {
+          include /etc/nginx/stream.d/*.conf;
+      }
+    insertafter: EOF
+  when: relay_factorio or relay_windrose
+  notify: nginx reload
+
+- name: Factorio UDP リレー設定を配置
+  template:
+    src: stream_factorio.conf.j2
+    dest: /etc/nginx/stream.d/factorio.conf
+    mode: "0644"
+  when: relay_factorio
+  notify: nginx reload
+
+- name: Factorio UDP リレー設定を削除（無効時）
+  file:
+    path: /etc/nginx/stream.d/factorio.conf
+    state: absent
+  when: not relay_factorio
+  notify: nginx reload
+
+- name: Windrose UDP+TCP リレー設定を配置
+  template:
+    src: stream_windrose.conf.j2
+    dest: /etc/nginx/stream.d/windrose.conf
+    mode: "0644"
+  when: relay_windrose
+  notify: nginx reload
+
+- name: Windrose UDP+TCP リレー設定を削除（無効時）
+  file:
+    path: /etc/nginx/stream.d/windrose.conf
+    state: absent
+  when: not relay_windrose
   notify: nginx reload
 
 - name: Nginx の設定テスト
   command: nginx -t
   changed_when: false
-
-handlers:
-  - name: nginx reload
-    systemd:
-      name: nginx
-      state: reloaded

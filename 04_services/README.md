@@ -223,8 +223,8 @@ docker exec windrose cat /server/R5/ServerDescription.json
 1. 友人が Windrose を起動
 2. **Play → Connect to Server** で招待コードを入力
 
-> デフォルト設定（`UseDirectConnection: false`）では P2P/ICE 接続のためポート開放不要です。
-> 直接接続を使う場合は `ServerDescription.json` で `UseDirectConnection: true` に変更し、UDP+TCP 7777 を開放してください。
+> **P2P モード**（デフォルト）: `UseDirectConnection: false` ではポート開放不要ですが、ICE ネゴシエーション時に自宅サーバの IP が相手に見える場合があります。
+> **直接接続モード**: `UseDirectConnection: true` にして踏み台サーバ（05_relay）経由でリレーすると自宅 IP を隠せます。踏み台で `relay_windrose: true` を設定し、`DirectConnectionServerAddress` を踏み台の IP に変更してください。
 
 ---
 
