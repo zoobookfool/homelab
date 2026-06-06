@@ -4,34 +4,16 @@
   become: true
 
   tasks:
-    - name: 必要パッケージをインストール
+    - name: curl をインストール
       apt:
-        name:
-          - ca-certificates
-          - curl
-          - gnupg
+        name: curl
         state: present
         update_cache: true
 
-    - name: Docker 公式 GPG キーを追加
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
-
-    - name: Docker 公式リポジトリを追加
-      apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu noble stable"
-        state: present
-
-    - name: Docker をインストール
-      apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-compose-plugin
-        state: present
-        update_cache: true
+    - name: Docker をインストール（公式スクリプト）
+      ansible.builtin.shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
 
     - name: Docker を起動・自動起動設定
       systemd:

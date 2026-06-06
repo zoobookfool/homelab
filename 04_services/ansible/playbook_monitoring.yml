@@ -1,0 +1,18 @@
+---
+- name: 監視ダッシュボードを起動
+  hosts: app
+  become: false
+  vars:
+    deploy_path: /opt/homelab
+
+  tasks:
+    - name: 監視ダッシュボードを起動
+      shell: make up-monitoring
+      args:
+        chdir: "{{ deploy_path }}"
+      register: result
+      changed_when: true
+
+    - name: 起動結果を表示
+      debug:
+        var: result.stdout_lines

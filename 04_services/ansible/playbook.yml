@@ -1,0 +1,73 @@
+---
+- name: サービスファイルをサーバにデプロイ
+  hosts: app
+  become: true
+  vars:
+    deploy_path: /opt/homelab
+    tz: Asia/Tokyo
+
+  tasks:
+    - name: make をインストール
+      apt:
+        name: make
+        state: present
+
+    - name: デプロイディレクトリを作成
+      file:
+        path: "{{ deploy_path }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: compose ファイルをコピー
+      copy:
+        src: "{{ playbook_dir }}/../compose/"
+        dest: "{{ deploy_path }}/compose/"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: services ファイルをコピー
+      copy:
+        src: "{{ playbook_dir }}/../services/"
+        dest: "{{ deploy_path }}/services/"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Makefile をコピー
+      copy:
+        src: "{{ playbook_dir }}/../Makefile"
+        dest: "{{ deploy_path }}/Makefile"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: .env が存在しない場合のみ .env.example からコピー
+      copy:
+        src: "{{ playbook_dir }}/../.env.example"
+        dest: "{{ deploy_path }}/.env"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0600'
+        force: false
+
+    - name: TZ を設定
+      lineinfile:
+        path: "{{ deploy_path }}/.env"
+        regexp: '^TZ='
+        line: "TZ={{ tz }}"
+
+    - name: GRAFANA_ADMIN_PASSWORD を設定（変数が渡された場合のみ）
+      lineinfile:
+        path: "{{ deploy_path }}/.env"
+        regexp: '^GRAFANA_ADMIN_PASSWORD='
+        line: "GRAFANA_ADMIN_PASSWORD={{ grafana_admin_password }}"
+      when: grafana_admin_password is defined
+
+    - name: 監視データディレクトリを作成
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0777'
+      loop:
+        - "{{ deploy_path }}/monitoring/prometheus"
+        - "{{ deploy_path }}/monitoring/grafana"

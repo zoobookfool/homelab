@@ -23,43 +23,86 @@ Docker Compose で各サービスを起動します。
 
 ---
 
-## .env の設定
+## 1. inventory ファイルの作成
 
-`.env.example` をコピーして `.env` を作成し、**起動するサービスに必要な項目だけ**設定します。
-`.env` は **Git にコミットしません**（`.gitignore` で除外済み）。
+`04_services/ansible/inventory.ini` を作成します。
+このファイルは **Git にコミットしません**（`.gitignore` で除外済み）。
 
 ```bash
-cp .env.example .env
+cat > 04_services/ansible/inventory.ini << 'EOF'
+[app]
+<アプリサーバのTailscale IP> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
+EOF
 ```
 
 ---
 
-## 使いたいサービスを選んで構築する
+## 2. サービスファイルをサーバにデプロイ
 
-### 1. 起動するサービスを決める
+Ansible でサーバに compose ファイル・設定ファイルを転送し、`.env` を作成します。
 
-上の前提条件テーブルを確認し、起動するサービスを決めます。
+```bash
+ansible-playbook -i 04_services/ansible/inventory.ini 04_services/ansible/playbook.yml \
+  -e "grafana_admin_password=<Grafanaのパスワード>"
+```
 
-### 2. .env に必要な項目を設定する
+デプロイされるディレクトリ（サーバ上）：
 
-`.env` を開き、起動するサービスに対応するセクションの項目を埋めます。
-**起動しないサービスの項目は空欄のままで構いません。**
+```
+/opt/homelab/
+├── compose/         # Docker Compose ファイル
+├── services/        # サービス設定ファイル
+├── Makefile
+├── .env             # 環境変数（.env.example から自動生成）
+└── monitoring/      # データディレクトリ（自動作成）
+    ├── prometheus/
+    └── grafana/
+```
+
+---
+
+## 3. .env の設定
+
+デプロイ後、サーバの `/opt/homelab/.env` を編集して**起動するサービスに必要な項目だけ**設定します。
+`.env` は **Git にコミットしません**（`.gitignore` で除外済み）。
+
+```bash
+ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<TailscaleのIP>
+vi /opt/homelab/.env
+```
+
+起動するサービスに対応するセクションの項目を埋めます。**起動しないサービスの項目は空欄のままで構いません。**
 
 例：監視ダッシュボードだけ起動する場合に必要な設定：
 
-```bash
+```
 DOMAIN=example.com
 TZ=Asia/Tokyo
-GRAFANA_ADMIN_PASSWORD=<任意のパスワード>
+GRAFANA_ADMIN_PASSWORD=<デプロイ時に設定済み>
 ```
 
-### 3. サービスを起動する
+---
+
+## 4. サービスを起動する
+
+### Ansible で起動する（推奨）
 
 ```bash
+# 監視ダッシュボード
+ansible-playbook -i 04_services/ansible/inventory.ini 04_services/ansible/playbook_monitoring.yml
+```
+
+### SSH 接続して直接起動する
+
+```bash
+ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<TailscaleのIP>
+cd /opt/homelab
 make up-monitoring
 ```
 
-### 4. 外部公開の設定をする（外部公開する場合）
+---
+
+## 5. 外部公開の設定をする（外部公開する場合）
 
 構成パターンに応じて次の手順に進みます。
 
@@ -73,6 +116,8 @@ make up-monitoring
 ---
 
 ## 起動コマンド一覧
+
+> サーバに SSH 接続し、`/opt/homelab` で実行します。
 
 ```bash
 # 個別に起動

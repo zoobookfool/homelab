@@ -18,14 +18,7 @@
 
 ```bash
 cat > 03_docker/ansible/inventory.ini << 'EOF'
-# Ansible inventory ファイル
-# このファイルは秘匿情報を含むため Git にコミットしないこと（.gitignore で除外済み）
-#
-# 書き方の例：
-# [homeserver]
-# 100.x.x.x ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
-
-[homeserver]
+[app]
 <アプリサーバのTailscale IP> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 EOF
 ```
@@ -39,18 +32,14 @@ EOF
 
 ```bash
 cd 03_docker/ansible
-ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
+ansible-playbook -i inventory.ini playbook.yml
 ```
 
 Playbook が設定する内容：
 
 | 設定項目 | 内容 |
 |---|---|
-| 必要パッケージの導入 | `ca-certificates` `curl` `gnupg` |
-| Docker 公式 GPG キーの追加 | apt の署名検証用 |
-| Docker 公式リポジトリの追加 | 最新版を取得するため |
-| Docker Engine のインストール | `docker-ce` `docker-ce-cli` `containerd.io` |
-| Docker Compose Plugin のインストール | `docker-compose-plugin` |
+| Docker のインストール | 公式スクリプト（`get.docker.com`）で導入 |
 | Docker の自動起動設定 | サーバ再起動後も自動起動 |
 | ユーザーを docker グループに追加 | `sudo` なしで docker コマンドを使えるように |
 

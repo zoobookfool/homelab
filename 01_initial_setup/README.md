@@ -142,29 +142,28 @@ cd homelab
 
 ```bash
 cat > 01_initial_setup/ansible/inventory.ini << 'EOF'
-# Ansible inventory ファイル
-# このファイルは秘匿情報を含むため Git にコミットしないこと（.gitignore で除外済み）
-#
-# 書き方の例：
-# [homeserver]
-# 192.168.1.100 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
-#
-# [vps]
-# 203.0.113.1 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
-
-[homeserver]
+[app]
 <アプリサーバのIPアドレス> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 EOF
 ```
 
-### 4-3. Playbook の実行
+### 4-3. NOPASSWD 設定（Ubuntu 26.04 必須）
+
+Ubuntu 26.04 は sudo に TTY を要求するため、Ansible から sudo を実行するには事前に NOPASSWD 設定が必要です。
+SSH でサーバに接続して設定します。
+
+```bash
+ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<アプリサーバのIPアドレス>
+echo "<ユーザー名> ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/<ユーザー名>
+exit
+```
+
+### 4-4. Playbook の実行
 
 ```bash
 cd 01_initial_setup/ansible
-ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
+ansible-playbook -i inventory.ini playbook.yml
 ```
-
-パスワードを聞かれたらアプリサーバのパスワードを入力します。
 
 ---
 
