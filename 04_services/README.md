@@ -179,6 +179,53 @@ docker compose -f compose/element.yml run --rm synapse generate
 
 生成された `services/element/homeserver.yaml` を編集してから起動します。
 
+### Factorio
+
+起動後、`/opt/homelab/game/factorio/` にサーバ設定ファイルが自動生成されます。
+
+```
+/opt/homelab/game/factorio/
+├── config/
+│   └── server-settings.json   # サーバ名・説明・パスワード・公開設定など
+├── saves/                     # セーブデータ
+└── mods/                      # MOD（任意）
+```
+
+`server-settings.json` を編集してサーバ名やパスワードを設定した後、コンテナを再起動します：
+
+```bash
+make down-game-factorio
+make up-game-factorio
+```
+
+**接続方法（友人への共有）：**
+
+| 方法 | 手順 |
+|---|---|
+| 直接接続 | Factorio → マルチプレイヤー → 直接接続 → `<サーバのIP>:34197` |
+| サーバリスト | `server-settings.json` の `visibility.public` を `true` にして公開 |
+
+> UDP 34197 のポート開放が必要です（踏み台 or アプリサーバのファイアウォール）。
+
+### Windrose（UE5）
+
+起動に 1〜2 分かかります。`R5/ServerDescription.json` が生成されれば起動完了です。
+
+```bash
+# サーバが起動するまで待ってから招待コードを確認
+docker exec windrose cat /server/R5/ServerDescription.json
+```
+
+`InviteCode` の値（例: `9192a58a`）を友人に共有します。
+
+**接続方法（友人への共有）：**
+
+1. 友人が Windrose を起動
+2. **Play → Connect to Server** で招待コードを入力
+
+> デフォルト設定（`UseDirectConnection: false`）では P2P/ICE 接続のためポート開放不要です。
+> 直接接続を使う場合は `ServerDescription.json` で `UseDirectConnection: true` に変更し、UDP+TCP 7777 を開放してください。
+
 ---
 
 ## データの保存場所
