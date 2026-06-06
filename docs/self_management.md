@@ -32,7 +32,7 @@ ansible --version
 | [02_tailscale](../02_tailscale/README.md) | `ansible-playbook -i inventory.ini playbook.yml` | 完了後は Tailscale 経由のみ |
 | [03_docker](../03_docker/README.md) | `ansible-playbook -i inventory.ini playbook.yml` | |
 | [04_services](../04_services/README.md) | `make up-core` | .env の設定が必要 |
-| [05_vps](../05_vps/README.md) | `ansible-playbook -i inventory.ini playbook.yml` | |
+| [05_relay](../05_relay/README.md) | `ansible-playbook -i inventory.ini playbook.yml` | |
 
 ### 3. 各 inventory.ini を作成する
 

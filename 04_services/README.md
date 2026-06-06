@@ -109,7 +109,7 @@ make up-monitoring
 | パターン | 次の手順 |
 |---|---|
 | パターンA（踏み台なし） | [05_nginx](../05_nginx/README.md)：アプリサーバに Nginx を直接設定する |
-| パターンB（踏み台あり） | [05_vps](../05_vps/README.md)：踏み台サーバに Nginx を設定する |
+| パターンB（踏み台あり） | [05_relay](../05_relay/README.md)：踏み台サーバに Nginx を設定する |
 
 外部公開しない場合（監視・Discord Bot・AI 踏み台のみ）は 05 の手順は不要です。
 
@@ -248,5 +248,5 @@ docker exec windrose cat /server/R5/ServerDescription.json
 ## 次の手順
 
 - パターンA（踏み台なし）で外部公開する → [05_nginx](../05_nginx/README.md)
-- パターンB（踏み台あり）で外部公開する → [05_vps](../05_vps/README.md)
+- パターンB（踏み台あり）で外部公開する → [05_relay](../05_relay/README.md)
 - 外部公開しない → [06_backup](../06_backup/README.md)

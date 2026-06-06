@@ -50,11 +50,11 @@ chmod 600 ~/.ssh/authorized_keys
 
 ## 2. inventory ファイルの作成
 
-`05_vps/ansible/` に `inventory.ini` を作成します。
+`05_relay/ansible/` に `inventory.ini` を作成します。
 このファイルは **Git にコミットしません**（`.gitignore` で除外済み）。
 
 ```bash
-cat > 05_vps/ansible/inventory.ini << 'EOF'
+cat > 05_relay/ansible/inventory.ini << 'EOF'
 # Ansible inventory ファイル
 # このファイルは秘匿情報を含むため Git にコミットしないこと（.gitignore で除外済み）
 #
@@ -72,7 +72,7 @@ EOF
 ## 3. Ansible の実行
 
 ```bash
-cd 05_vps/ansible
+cd 05_relay/ansible
 ansible-playbook -i inventory.ini playbook.yml --ask-become-pass \
   -e "tailscale_auth_key=<発行したAuth Key>" \
   -e "domain=<取得したドメイン名>"
