@@ -2,7 +2,7 @@ name: factorio
 
 services:
   factorio:
-    image: factoriotools/factorio:stable
+    image: factoriotools/factorio:1.1
     container_name: factorio
     restart: unless-stopped
     environment:
