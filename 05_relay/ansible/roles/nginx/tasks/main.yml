@@ -11,15 +11,30 @@
     state: started
     enabled: true
 
-# ---- HTTP リバースプロキシ（ドメインあり） ----
+# ---- HTTP リバースプロキシ（ドメインあり・Cloudflare Origin Certificate） ----
 
-- name: Certbot をインストール（ドメインあり）
-  apt:
-    name:
-      - certbot
-      - python3-certbot-nginx
-    state: present
+- name: SSL 証明書ディレクトリを作成
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: "0700"
   when: domain | length > 0
+
+- name: Cloudflare Origin Certificate を配置
+  copy:
+    src: "{{ cloudflare_cert_path }}"
+    dest: "/etc/nginx/ssl/{{ domain }}.pem"
+    mode: "0644"
+  when: domain | length > 0
+  notify: nginx reload
+
+- name: Cloudflare Origin Certificate の秘密鍵を配置
+  copy:
+    src: "{{ cloudflare_key_path }}"
+    dest: "/etc/nginx/ssl/{{ domain }}.key"
+    mode: "0600"
+  when: domain | length > 0
+  notify: nginx reload
 
 - name: Nginx 設定ファイルを配置（ドメインあり）
   template:

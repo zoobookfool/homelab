@@ -16,6 +16,11 @@
     # ゲームサーバのみの場合は空のままで OK
     domain: ""                 # 例: example.com
 
+    # Cloudflare Origin Certificate（domain 設定時は必須）
+    # ローカル（操作端末）上の証明書・秘密鍵ファイルのパス
+    cloudflare_cert_path: "~/.ssl/{{ domain }}.pem"
+    cloudflare_key_path: "~/.ssl/{{ domain }}.key"
+
   roles:
     - tailscale
     - ufw

@@ -56,6 +56,9 @@ vars:
   domain: ""                   # ← Mastodon・Element 等を使う場合のみ設定
 ```
 
+> 💡 `domain` を設定する場合は、先に [5. SSL 証明書の準備](#5-ssl-証明書の準備ドメインあり時のみ) を済ませて
+> `~/.ssl/<ドメイン>.pem` / `.key` を用意しておいてください。Ansible 実行時に自動配置されます。
+
 ---
 
 ## 3. Ansible の実行
@@ -111,26 +114,53 @@ docker exec windrose sh -c 'cat /server/R5/ServerDescription.json'
 
 ---
 
-## 5. SSL 証明書の取得（ドメインあり時のみ）
+## 5. SSL 証明書の準備（ドメインあり時のみ）
 
 `domain` を設定した場合のみ実施します。
+このリポジトリでは **Cloudflare Origin Certificate** を使用します（証明書の自動更新運用が不要・有効期限 15 年）。
 
-### DNS レコードの設定
+### 5-1. DNS レコードの設定（Cloudflare）
 
-| レコード | ホスト名 | 値 |
-|---|---|---|
-| A | `@` | 踏み台の IP アドレス |
-| A | `*` | 踏み台の IP アドレス（ワイルドカード） |
+| レコード | ホスト名 | 値 | プロキシ |
+|---|---|---|---|
+| A | `@` | 踏み台の IP アドレス | プロキシ済み（オレンジ） |
+| A | `*` | 踏み台の IP アドレス（ワイルドカード） | プロキシ済み（オレンジ） |
 
-### 証明書の取得
+> プロキシを有効にすることで踏み台の IP アドレスがユーザーから隠れます。
+
+### 5-2. SSL/TLS モードの設定（Cloudflare）
+
+Cloudflare ダッシュボード → **SSL/TLS** → 暗号化モードを **「フル（厳格）」** に設定します。
+
+### 5-3. Origin Certificate の発行（Cloudflare）
+
+Cloudflare ダッシュボード → **SSL/TLS → 原点サーバー → 証明書を作成**
+
+| 項目 | 値 |
+|---|---|
+| 秘密鍵のタイプ | RSA |
+| ホスト名 | `<ドメイン>` と `*.<ドメイン>` |
+| 有効期限 | 15 年 |
+
+発行された**証明書**と**秘密鍵**を操作端末（WSL2）に保存します。
 
 ```bash
-ssh -i ~/.ssh/id_ed25519_homelab <ユーザー名>@<踏み台のTailscale IP>
-sudo certbot --nginx -d example.com -d "*.example.com" --agree-tos
+mkdir -p ~/.ssl && chmod 700 ~/.ssl
+
+nano ~/.ssl/<ドメイン>.pem   # 証明書を貼り付けて保存
+nano ~/.ssl/<ドメイン>.key   # 秘密鍵を貼り付けて保存
+
+chmod 644 ~/.ssl/<ドメイン>.pem
+chmod 600 ~/.ssl/<ドメイン>.key
 ```
 
-> ワイルドカード証明書は DNS-01 チャレンジが必要です。
-> 取得時に DNS レコードへの TXT レコード追加を求められます。
+> ⚠️ 秘密鍵は機密情報です。チャット・Issue・コミットには絶対に含めないでください。
+
+### 5-4. Ansible 実行時に自動配置
+
+`playbook.yml` を実行すると、上記のファイルが自動的に踏み台サーバの `/etc/nginx/ssl/` に配置され、
+Nginx の SSL 設定（`ssl_certificate` / `ssl_certificate_key`）がそのパスを参照します。
+（`cloudflare_cert_path` / `cloudflare_key_path` 変数のデフォルトは `~/.ssl/<ドメイン>.pem` / `.key`）
 
 ---
 
