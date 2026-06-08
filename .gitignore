@@ -6,3 +6,6 @@
 Thumbs.db
 *.swp
 */ansible/inventory.ini
+
+# 実際のドメイン名が入る生成ファイル（config.json.example からコピーして作成）
+04_services/services/element/config.json

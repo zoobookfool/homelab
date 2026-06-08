@@ -21,15 +21,45 @@ Matrix プロトコルのホームサーバ（Synapse）と Web クライアン�
 
 ## 起動方法
 
+> 💡 以下のように `compose/` 配下のファイルを直接指定するコマンドは `--env-file .env` を付けて
+> `/opt/homelab` から実行してください（`-f` で指定したファイルのディレクトリがプロジェクトディレクトリと
+> 認識され、`.env` が見つからず変数展開に失敗するため。`make` コマンドには同様の対策が組み込み済みです）。
+
 ### 1. 設定ファイルの生成
 
 ```bash
-docker compose -f compose/element.yml run --rm synapse generate
+docker compose --env-file .env -f compose/element.yml run --rm synapse generate
 ```
 
-生成された `services/element/homeserver.yaml` を確認・編集します。
+生成された `element/synapse/homeserver.yaml`（`docker-compose.yml` の volumes 設定により `/opt/homelab/element/synapse/` 以下に生成されます）を確認・編集します。
 
-### 2. 起動
+> ⚠️ `server_name` はここで確定し、**後から変更できません**（federation の鍵やユーザー ID に紐づくため）。
+> 公開 URL（`element.<ドメイン>` / `matrix.<ドメイン>`）と一致させる場合は `matrix.<ドメイン>` を、
+> ルートドメインを使いたい場合は別途 `.well-known/matrix/server` の delegation 設定が必要です
+> （本リポジトリの Nginx 設定には delegation 用の設定は含まれていません）。
+>
+> また `generate` が作る初期設定は **SQLite** です。`database:` セクションを
+> [`homeserver.yaml.example`](./homeserver.yaml.example) の内容で置き換え、
+> `password` を `.env` の `SYNAPSE_DB_PASSWORD` と同じ値にしてください（PostgreSQL コンテナに接続するため）。
+
+### 2. Element Web の設定ファイルを作成
+
+`services/element/config.json.example` をコピーして `config.json` を作成し、`m.homeserver` を実際のドメインに合わせて編集します。
+
+```bash
+cp services/element/config.json.example services/element/config.json
+```
+
+```json
+"m.homeserver": {
+    "base_url": "https://matrix.<ドメイン>",
+    "server_name": "<手順1で設定した server_name と同じ値>"
+}
+```
+
+> `config.json` は実際のドメイン名を含むため Git 管理対象外です（`.gitignore` 参照）。
+
+### 3. 起動
 
 ```bash
 make up-element
