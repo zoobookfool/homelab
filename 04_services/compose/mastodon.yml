@@ -40,7 +40,7 @@ services:
     command: bundle exec puma -C config/puma.rb
     env_file: ../.env
     environment:
-      - LOCAL_DOMAIN=${DOMAIN}
+      - LOCAL_DOMAIN=mastodon.${DOMAIN}
       - SECRET_KEY_BASE=${MASTODON_SECRET_KEY_BASE}
       - OTP_SECRET=${MASTODON_OTP_SECRET}
       - VAPID_PRIVATE_KEY=${MASTODON_VAPID_PRIVATE_KEY}
@@ -73,7 +73,7 @@ services:
     restart: unless-stopped
     env_file: ../.env
     environment:
-      - LOCAL_DOMAIN=${DOMAIN}
+      - LOCAL_DOMAIN=mastodon.${DOMAIN}
       - DB_HOST=mastodon-db
       - DB_NAME=mastodon
       - DB_USER=mastodon
@@ -96,7 +96,7 @@ services:
     command: bundle exec sidekiq
     env_file: ../.env
     environment:
-      - LOCAL_DOMAIN=${DOMAIN}
+      - LOCAL_DOMAIN=mastodon.${DOMAIN}
       - SECRET_KEY_BASE=${MASTODON_SECRET_KEY_BASE}
       - OTP_SECRET=${MASTODON_OTP_SECRET}
       - DB_HOST=mastodon-db
