@@ -52,6 +52,6 @@ make up-discord-bot
 変更後はイメージを再ビルドして再起動します。
 
 ```bash
-docker compose -f compose/discord_bot.yml build
+docker compose --env-file .env -f compose/discord_bot.yml build
 make up-discord-bot
 ```

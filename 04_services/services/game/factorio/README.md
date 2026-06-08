@@ -37,7 +37,7 @@ mkdir -p /opt/homelab/{compose,services/game/factorio}
 
 ```bash
 cd /opt/homelab
-docker compose -f compose/game_factorio.yml up -d
+docker compose --env-file .env -f compose/game_factorio.yml up -d
 ```
 
 起動後、`/opt/homelab/game/factorio/` にサーバ設定ファイルが自動生成されます。

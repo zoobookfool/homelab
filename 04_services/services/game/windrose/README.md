@@ -33,11 +33,11 @@ curl -fsSL https://get.docker.com | sh
 Steam アカウントが必要です。
 
 ```bash
-docker compose -f compose/game_windrose.yml build \
+docker compose --env-file .env -f compose/game_windrose.yml build \
   --build-arg STEAM_USER=<Steamユーザー名> \
   --build-arg STEAM_PASS=<Steamパスワード>
 
-docker compose -f compose/game_windrose.yml up -d
+docker compose --env-file .env -f compose/game_windrose.yml up -d
 ```
 
 > Steam Guard（2段階認証）を使用している場合は、ビルド中に認証コードの入力を求められます。

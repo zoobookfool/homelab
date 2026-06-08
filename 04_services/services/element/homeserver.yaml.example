@@ -1,6 +1,6 @@
 # homeserver.yaml.example
 # 初回起動時に以下のコマンドで自動生成されます：
-# docker compose -f compose/element.yml run --rm synapse generate
+# docker compose --env-file .env -f compose/element.yml run --rm synapse generate
 #
 # 生成後に最低限以下の項目を確認・編集してください
 
