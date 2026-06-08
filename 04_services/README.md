@@ -153,28 +153,39 @@ make logs-monitoring
 
 ## 初回起動時の追加手順
 
+> 💡 `compose/` 配下のファイルを直接指定するコマンドは `--env-file .env` を付けて
+> `/opt/homelab` から実行してください（`-f` で指定したファイルのディレクトリがプロジェクトディレクトリと
+> 認識され、`.env` が見つからず変数展開に失敗するため。`make` コマンドには同様の対策が組み込み済みです）。
+
 ### Mastodon
 
 データベースのセットアップ：
 
 ```bash
 make up-mastodon
-docker compose -f compose/mastodon.yml run --rm web bundle exec rails db:setup
+docker compose --env-file .env -f compose/mastodon.yml run --rm mastodon-web bundle exec rails db:setup
 ```
 
 管理者アカウントの作成：
 
 ```bash
-docker compose -f compose/mastodon.yml run --rm web bin/tootctl accounts create \
+docker compose --env-file .env -f compose/mastodon.yml run --rm mastodon-web bin/tootctl accounts create \
   <ユーザー名> --email <メールアドレス> --confirmed --role Owner
 ```
+
+> ⚠️ 登録が承認制（デフォルト）の場合、上記だけでは作成したアカウント自身が承認待ち状態のままになり、
+> 他に承認できる管理者もいないため詰みます。続けて自分自身を承認してください（詳細は
+> [services/mastodon/README.md](services/mastodon/README.md) 参照）。
+> ```bash
+> docker compose --env-file .env -f compose/mastodon.yml run --rm mastodon-web bin/tootctl accounts approve <ユーザー名>
+> ```
 
 ### Element（Matrix Synapse）
 
 設定ファイルの生成：
 
 ```bash
-docker compose -f compose/element.yml run --rm synapse generate
+docker compose --env-file .env -f compose/element.yml run --rm synapse generate
 ```
 
 生成された `services/element/homeserver.yaml` を編集してから起動します。
