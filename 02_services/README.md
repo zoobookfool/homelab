@@ -1,4 +1,4 @@
-# 04 Services
+# 02 Services
 
 Docker Compose で各サービスを起動します。
 使いたいサービスだけを選んで起動できます。
@@ -7,7 +7,7 @@ Docker Compose で各サービスを起動します。
 
 ## 前提条件
 
-[01_network/README.md) が完了していること。
+[01_network](../01_network/README.md) が完了していること。
 
 ### サービスごとの前提条件
 
@@ -133,9 +133,6 @@ make up-discord-bot      # Discord Bot
 make up-ai-proxy         # ローカル AI 踏み台
 make up-game-factorio    # Factorio サーバ
 make up-game-windrose    # Windrose（UE5）サーバ
-
-# 常時起動サービスをまとめて起動
-make up-core
 
 # すべて起動
 make up-all
