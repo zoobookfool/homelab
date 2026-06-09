@@ -20,6 +20,20 @@ ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_homelab -C "homelab"
 
 ---
 
+## 手動編集ファイル一覧
+
+作業を通じて手動で記載が必要なファイルです。
+
+| タイミング | ファイル | 内容 |
+|---|---|---|
+| 手順 0 | `02_services/.env` | ドメイン・パスワード・API キーなど |
+| 手順 0 | `01_network/ansible/inventory.ini` の `[app_init]` | 初期接続 IP・ユーザー名 |
+| 手順 0 | `03_proxy/ansible/playbook.yml` の `vars` | ドメイン・踏み台 IP・リレー有無（手順 3 前に設定） |
+| 手順 1a 完了後 | `01_network/ansible/inventory.ini` の `[app]` | `ansible_host=` に Tailscale IP を記入 |
+| 手順 1a 完了後 | `02_services/.env` の `DOCKER_BIND_IP` | Tailscale IP を設定 |
+
+---
+
 ## 0. ローカルで設定ファイルを準備する
 
 ### リポジトリをクローン
@@ -58,23 +72,21 @@ vi 02_services/.env
 
 ### inventory ファイルを作成
 
-**アプリサーバ用:**
+全手順で共通して使う inventory ファイルを1つ作成します。
 
 ```bash
 cat > 01_network/ansible/inventory.ini << 'EOF'
+# 手順 1a 用（初期接続 IP）
+[app_init]
+app_init ansible_host=<公開 IP または LAN IP> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
+
+# 手順 1b 以降（Tailscale IP — 手順 1a 完了後に記入）
 [app]
-<サーバのIPアドレス> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
-EOF
-```
+app ansible_host= ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 
-> この時点では LAN IP または VPS 公開 IP を記入します。
-
-**パターンB 踏み台サーバ用（追加で作成）:**
-
-```bash
-cat > 03_proxy/ansible/inventory.ini << 'EOF'
+# パターンB のみ
 [relay]
-<踏み台サーバのIPアドレス> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
+relay ansible_host=<踏み台サーバ IP> ansible_user=<ユーザー名> ansible_ssh_private_key_file=~/.ssh/id_ed25519_homelab
 EOF
 ```
 
@@ -95,11 +107,11 @@ ansible-playbook -i 01_network/ansible/inventory.ini 01_network/ansible/playbook
 
 ### inventory と .env を更新する
 
-`01_network/ansible/inventory.ini` の IP を Tailscale IP に書き換えます。
+`01_network/ansible/inventory.ini` の `[app]` の `ansible_host=` に Tailscale IP を記入します。
 
 ```
 [app]
-100.x.x.x  ← Tailscale IP に変更
+app ansible_host=100.x.x.x  ← ここに Tailscale IP を記入
 ```
 
 `02_services/.env` の `DOCKER_BIND_IP` も設定します。
@@ -127,8 +139,6 @@ ansible-playbook -i 01_network/ansible/inventory.ini 01_network/ansible/playbook
 ```bash
 ansible-playbook -i 01_network/ansible/inventory.ini 02_services/ansible/playbook.yml
 ```
-
-> `02_services/ansible/` には inventory.ini を別途作成せず、`01_network` のものを流用します。
 
 Ansible がファイルのデプロイ → Mastodon / Element の初期化 → `make up-all` による起動 を自動で行います。
 
@@ -170,7 +180,7 @@ vars:
 ### Ansible を実行
 
 ```bash
-ansible-playbook -i 03_proxy/ansible/inventory.ini 03_proxy/ansible/playbook.yml \
+ansible-playbook -i 01_network/ansible/inventory.ini 03_proxy/ansible/playbook.yml \
   -e "tailscale_auth_key=<Auth Key>"   # パターンB のみ
 ```
 
