@@ -58,7 +58,7 @@ services:
     volumes:
       - /opt/homelab/mastodon/public:/mastodon/public/system
     ports:
-      - "3001:3000"
+      - "${DOCKER_BIND_IP:-127.0.0.1}:3001:3000"
     depends_on:
       mastodon-db:
         condition: service_healthy
@@ -80,7 +80,7 @@ services:
       - DB_PASS=${MASTODON_DB_PASSWORD}
       - REDIS_URL=redis://mastodon-redis:6379
     ports:
-      - "4000:4000"
+      - "${DOCKER_BIND_IP:-127.0.0.1}:4000:4000"
     depends_on:
       mastodon-db:
         condition: service_healthy

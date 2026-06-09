@@ -73,12 +73,17 @@ vi /opt/homelab/.env
 
 起動するサービスに対応するセクションの項目を埋めます。**起動しないサービスの項目は空欄のままで構いません。**
 
+> ⚠️ **`DOCKER_BIND_IP` は必ず設定してください**（UFW は Docker の公開ポートに適用されないため）。
+> - パターンA（踏み台なし）: `DOCKER_BIND_IP=127.0.0.1`
+> - パターンB（踏み台あり）: `DOCKER_BIND_IP=<アプリサーバの Tailscale IP>`（`tailscale ip -4` で確認）
+
 例：監視ダッシュボードだけ起動する場合に必要な設定：
 
 ```
 DOMAIN=example.com
 TZ=Asia/Tokyo
 GRAFANA_ADMIN_PASSWORD=<デプロイ時に設定済み>
+DOCKER_BIND_IP=127.0.0.1
 ```
 
 ---

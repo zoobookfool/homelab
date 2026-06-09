@@ -26,7 +26,7 @@ services:
     volumes:
       - /opt/homelab/monitoring/grafana:/var/lib/grafana
     ports:
-      - "3000:3000"
+      - "${DOCKER_BIND_IP:-127.0.0.1}:3000:3000"
     depends_on:
       - prometheus
     networks:

@@ -30,7 +30,7 @@ services:
     volumes:
       - /opt/homelab/element/synapse:/data
     ports:
-      - "8008:8008"
+      - "${DOCKER_BIND_IP:-127.0.0.1}:8008:8008"
     depends_on:
       synapse-db:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
     volumes:
       - ../services/element/config.json:/app/config.json:ro
     ports:
-      - "8080:80"
+      - "${DOCKER_BIND_IP:-127.0.0.1}:8080:80"
     networks:
       - element
 
