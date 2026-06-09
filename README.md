@@ -4,7 +4,6 @@ Docker Compose と Ansible を使ったホームサーバ構築リポジトリ�
 使いたいサービスだけを選んで環境構築できます。
 
 > このリポジトリの目的・設計意図については [docs/portfolio.md](./docs/portfolio.md) を参照してください。
-> 自分用の環境管理手順については [docs/self_management.md](./docs/self_management.md) を参照してください。
 
 ---
 

@@ -1,7 +1,22 @@
 # セットアップ手順
 
-> 以降の操作は **WSL2（Ubuntu）上** で実行します。  
-> Ansible のインストールや SSH キーの作成がまだの場合は先に [01_network](../01_network/README.md) を参照してください。
+以降の操作は **WSL2（Ubuntu）上** で実行します。
+
+### 事前準備（未設定の場合のみ）
+
+**Ansible のインストール**
+
+```bash
+sudo apt update && sudo apt install -y ansible
+```
+
+**SSH キーの作成**
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_homelab -C "homelab"
+```
+
+生成した公開鍵 (`~/.ssh/id_ed25519_homelab.pub`) をサーバに登録しておきます。
 
 ---
 
@@ -123,6 +138,16 @@ Ansible がファイルのデプロイ → Mastodon / Element の初期化 → `
 
 ドメインなし・Tailscale 経由のみでアクセスするサービスはこの手順は不要です。
 
+### Cloudflare Origin Certificate の準備（パターンB のみ）
+
+Cloudflare ダッシュボード → **SSL/TLS → Origin Server → Create Certificate** で証明書を生成し、ローカルに保存します。
+
+```bash
+mkdir -p ~/.ssl
+# 証明書を ~/.ssl/<ドメイン>.pem に保存
+# 秘密鍵を ~/.ssl/<ドメイン>.key に保存
+```
+
 ### 03_proxy/ansible/playbook.yml の vars を設定
 
 **パターンA（アプリサーバに Nginx を設定）:**
@@ -148,8 +173,6 @@ vars:
 ansible-playbook -i 03_proxy/ansible/inventory.ini 03_proxy/ansible/playbook.yml \
   -e "tailscale_auth_key=<Auth Key>"   # パターンB のみ
 ```
-
-> SSL 証明書（Cloudflare Origin Certificate）の準備が必要な場合は [03_proxy/README.md](../03_proxy/README.md) を参照してください。
 
 ---
 
