@@ -1,8 +1,0 @@
----
-- name: アプリサーバ初期設定
-  hosts: app
-  become: true
-
-  roles:
-    - common
-    - ufw

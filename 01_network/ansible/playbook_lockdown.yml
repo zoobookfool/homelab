@@ -1,0 +1,29 @@
+---
+- name: UFW ロックダウン（Tailscale 接続確認後に実行）
+  hosts: app
+  become: true
+
+  pre_tasks:
+    - name: Tailscale IP を取得
+      command: tailscale ip -4
+      register: ts_ip
+      changed_when: false
+      failed_when: false
+
+    - name: Tailscale が未接続の場合は中止
+      fail:
+        msg: "Tailscale が接続されていません。tailscale up を実行もしくは tailscale を確認してから再試行してください。"
+      when: ts_ip.rc != 0
+
+    - name: inventory.ini の IP と一致しているか確認
+      pause:
+        prompt: "Tailscale IP: {{ ts_ip.stdout }}\ninventory.ini の IP と一致していますか？ [yes/no]"
+      register: confirm
+
+    - name: 一致しない場合は中止
+      fail:
+        msg: "中止しました。inventory.ini を {{ ts_ip.stdout }} に更新してから再実行してください。"
+      when: confirm.user_input | lower != 'yes'
+
+  roles:
+    - ufw_lockdown

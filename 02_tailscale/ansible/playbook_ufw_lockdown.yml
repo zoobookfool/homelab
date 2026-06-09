@@ -1,7 +1,0 @@
----
-- name: UFW ロックダウン（Tailscale 接続確認後に実行）
-  hosts: app
-  become: true
-
-  roles:
-    - ufw_lockdown

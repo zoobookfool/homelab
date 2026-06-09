@@ -1,0 +1,26 @@
+---
+- name: OS 初期設定・Tailscale インストール
+  hosts: app
+  become: true
+
+  roles:
+    - common
+    - ufw
+    - tailscale
+
+  post_tasks:
+    - name: Tailscale IP を取得
+      command: tailscale ip -4
+      register: tailscale_ip
+      changed_when: false
+
+    - name: Tailscale IP を表示
+      debug:
+        msg: |
+          ----------------------------------------
+          Tailscale IP: {{ tailscale_ip.stdout }}
+          ----------------------------------------
+          次のステップ:
+            1. 01_network/ansible/inventory.ini の IP を {{ tailscale_ip.stdout }} に変更
+            2. 02_services/.env の DOCKER_BIND_IP を設定
+            3. ansible-playbook ... playbook_lockdown.yml を実行

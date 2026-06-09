@@ -1,0 +1,272 @@
+---
+- name: Docker インストール
+  hosts: app
+  become: true
+
+  tasks:
+    - name: curl をインストール
+      apt:
+        name: curl
+        state: present
+        update_cache: true
+
+    - name: Docker をインストール（公式スクリプト）
+      ansible.builtin.shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Docker を起動・自動起動設定
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: ユーザーを docker グループに追加
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true
+
+- name: サービスファイルをサーバにデプロイ・初期化・起動
+  hosts: app
+  become: true
+  vars:
+    deploy_path: /opt/homelab
+
+  tasks:
+
+    # ── 事前確認 ────────────────────────────────────────────────────────
+
+    - name: .env の存在を確認（ローカル）
+      stat:
+        path: "{{ playbook_dir }}/../.env"
+      register: env_file
+      delegate_to: localhost
+      become: false
+
+    - name: .env が未作成の場合は中止
+      fail:
+        msg: "02_services/.env が見つかりません。.env.example をコピーして設定してから再実行してください。"
+      when: not env_file.stat.exists
+
+    - name: mastodon.yml の存在を確認（ローカル）
+      stat:
+        path: "{{ playbook_dir }}/../compose/mastodon.yml"
+      register: mastodon_compose
+      delegate_to: localhost
+      become: false
+
+    - name: element.yml の存在を確認（ローカル）
+      stat:
+        path: "{{ playbook_dir }}/../compose/element.yml"
+      register: element_compose
+      delegate_to: localhost
+      become: false
+
+    # ── ファイルのデプロイ ──────────────────────────────────────────────
+
+    - name: make をインストール
+      apt:
+        name: make
+        state: present
+
+    - name: デプロイディレクトリを作成
+      file:
+        path: "{{ deploy_path }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: compose ファイルをコピー
+      copy:
+        src: "{{ playbook_dir }}/../compose/"
+        dest: "{{ deploy_path }}/compose/"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: services ファイルをコピー
+      copy:
+        src: "{{ playbook_dir }}/../services/"
+        dest: "{{ deploy_path }}/services/"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Makefile をコピー
+      copy:
+        src: "{{ playbook_dir }}/../Makefile"
+        dest: "{{ deploy_path }}/Makefile"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: .env をサーバにデプロイ
+      copy:
+        src: "{{ playbook_dir }}/../.env"
+        dest: "{{ deploy_path }}/.env"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0600'
+
+    - name: 監視データディレクトリを作成
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0777'
+      loop:
+        - "{{ deploy_path }}/monitoring/prometheus"
+        - "{{ deploy_path }}/monitoring/grafana"
+
+    # ── Mastodon 初期化 ─────────────────────────────────────────────────
+
+    - block:
+
+        - name: Mastodon DB 初期化済みか確認
+          stat:
+            path: "{{ deploy_path }}/mastodon/postgres/PG_VERSION"
+          register: mastodon_db
+
+        - block:
+
+            - name: Mastodon DB・Redis を起動
+              command: >
+                docker compose --env-file .env -f compose/mastodon.yml
+                up -d mastodon-db mastodon-redis
+              args:
+                chdir: "{{ deploy_path }}"
+
+            - name: Mastodon DB が ready になるまで待機
+              command: docker exec mastodon-db pg_isready -U mastodon
+              register: pg_ready
+              retries: 10
+              delay: 3
+              until: pg_ready.rc == 0
+
+            - name: Mastodon DB セットアップ
+              command: >
+                docker compose --env-file .env -f compose/mastodon.yml
+                run --rm mastodon-web bundle exec rails db:setup
+              args:
+                chdir: "{{ deploy_path }}"
+
+            - name: ローカル .env から Mastodon 管理者情報を取得
+              set_fact:
+                _mastodon_admin_user: "{{ lookup('pipe', 'grep -E \"^MASTODON_ADMIN_USERNAME=\" ' + playbook_dir + '/../.env | cut -d= -f2') }}"
+                _mastodon_admin_email: "{{ lookup('pipe', 'grep -E \"^MASTODON_ADMIN_EMAIL=\" ' + playbook_dir + '/../.env | cut -d= -f2') }}"
+
+            - name: Mastodon 管理者アカウントを作成
+              command: >
+                docker compose --env-file .env -f compose/mastodon.yml
+                run --rm mastodon-web bin/tootctl accounts create
+                {{ _mastodon_admin_user }}
+                --email {{ _mastodon_admin_email }} --confirmed --role Owner
+              args:
+                chdir: "{{ deploy_path }}"
+              when: _mastodon_admin_user != ""
+
+            - name: Mastodon 管理者アカウントを承認
+              command: >
+                docker compose --env-file .env -f compose/mastodon.yml
+                run --rm mastodon-web bin/tootctl accounts approve
+                {{ _mastodon_admin_user }}
+              args:
+                chdir: "{{ deploy_path }}"
+              when: _mastodon_admin_user != ""
+
+          when: not mastodon_db.stat.exists
+
+      when: mastodon_compose.stat.exists
+
+    # ── Element 初期化 ──────────────────────────────────────────────────
+
+    - block:
+
+        - name: Element homeserver.yaml の存在を確認
+          stat:
+            path: "{{ deploy_path }}/element/synapse/homeserver.yaml"
+          register: element_homeserver
+
+        - block:
+
+            - name: Element 設定ファイルを生成
+              command: >
+                docker compose --env-file .env -f compose/element.yml
+                run --rm synapse generate
+              args:
+                chdir: "{{ deploy_path }}"
+
+            - name: ローカル .env から Synapse DB パスワードを取得
+              set_fact:
+                _synapse_db_password: "{{ lookup('pipe', 'grep -E \"^SYNAPSE_DB_PASSWORD=\" ' + playbook_dir + '/../.env | cut -d= -f2') }}"
+
+            - name: homeserver.yaml のデータベース設定を PostgreSQL に変更
+              shell: |
+                python3 << 'PYEOF'
+                import re, os
+                path = '{{ deploy_path }}/element/synapse/homeserver.yaml'
+                pwd = os.environ['SYNAPSE_DB_PASSWORD']
+                with open(path) as f:
+                    content = f.read()
+                pg = '\n'.join([
+                    'database:',
+                    '  name: psycopg2',
+                    '  args:',
+                    '    user: synapse',
+                    '    password: ' + pwd,
+                    '    database: synapse',
+                    '    host: synapse-db',
+                    '    cp_min: 5',
+                    '    cp_max: 10',
+                ])
+                content = re.sub(
+                    r'database:\s*\n\s+name:\s+sqlite3[^\n]*\n\s+args:\s*\n\s+database:[^\n]+',
+                    pg, content
+                )
+                with open(path, 'w') as f:
+                    f.write(content)
+                PYEOF
+              environment:
+                SYNAPSE_DB_PASSWORD: "{{ _synapse_db_password }}"
+
+          when: not element_homeserver.stat.exists
+
+        - name: Element config.json の存在を確認
+          stat:
+            path: "{{ deploy_path }}/services/element/config.json"
+          register: element_config
+
+        - block:
+
+            - name: ローカル .env から Matrix サーバ名を取得
+              set_fact:
+                _matrix_server_name: "{{ lookup('pipe', 'grep -E \"^MATRIX_SERVER_NAME=\" ' + playbook_dir + '/../.env | cut -d= -f2') }}"
+
+            - name: Element config.json を example からコピー
+              copy:
+                src: "{{ deploy_path }}/services/element/config.json.example"
+                dest: "{{ deploy_path }}/services/element/config.json"
+                remote_src: true
+                owner: "{{ ansible_user }}"
+                group: "{{ ansible_user }}"
+
+            - name: Element config.json の base_url を更新
+              replace:
+                path: "{{ deploy_path }}/services/element/config.json"
+                regexp: 'https://matrix\.example\.com'
+                replace: 'https://{{ _matrix_server_name }}'
+
+            - name: Element config.json の server_name を更新
+              replace:
+                path: "{{ deploy_path }}/services/element/config.json"
+                regexp: '"server_name": "example\.com"'
+                replace: '"server_name": "{{ _matrix_server_name }}"'
+
+          when: not element_config.stat.exists
+
+      when: element_compose.stat.exists
+
+    # ── サービス起動 ────────────────────────────────────────────────────
+
+    - name: サービスを起動する
+      command: make up-all
+      args:
+        chdir: "{{ deploy_path }}"

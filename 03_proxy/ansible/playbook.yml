@@ -1,0 +1,43 @@
+---
+# ---- パターンA: アプリサーバに直接 Nginx を設定 ----
+# inventory.ini に [app] を記載して実行する
+# UFW に HTTP/HTTPS を追加し、Nginx + Certbot をインストールする
+
+- name: パターンA - アプリサーバ Nginx セットアップ
+  hosts: app
+  become: true
+
+  roles:
+    - ufw_app
+    - nginx_app
+
+# ---- パターンB: 踏み台サーバをセットアップ ----
+# inventory.ini に [relay] を記載して実行する
+# Tailscale でアプリサーバへの経路を確保し、Nginx でリレーする
+
+- name: パターンB - 踏み台サーバセットアップ
+  hosts: relay
+  become: true
+
+  vars:
+    # ---- 必須 ----
+    app_server_ip: ""          # アプリサーバの Tailscale IP（例: 100.x.x.x）
+    tailscale_auth_key: ""     # 踏み台が既に参加済みの場合は空でOK
+
+    # ---- ゲームサーバリレー（自宅 IP 隠蔽） ----
+    relay_factorio: false      # Factorio UDP 34197 リレー
+    relay_windrose: false      # Windrose UDP+TCP 7777 リレー
+
+    # ---- ドメインが必要なサービス（Mastodon・Element・Monitoring・AI） ----
+    # ゲームサーバのみの場合は空のままで OK
+    domain: ""                 # 例: example.com
+
+    # Cloudflare Origin Certificate（domain 設定時は必須）
+    # ローカル（操作端末）上の証明書・秘密鍵ファイルのパス
+    cloudflare_cert_path: "~/.ssl/{{ domain }}.pem"
+    cloudflare_key_path: "~/.ssl/{{ domain }}.key"
+
+  roles:
+    - tailscale
+    - ufw_relay
+    - nginx_relay

@@ -65,10 +65,10 @@ make logs-<サービス名>
 
 ### `.env` が読み込まれない
 
-`04_services/` ディレクトリにいることを確認します。
+サーバ上の `/opt/homelab` にいることを確認します。
 
 ```bash
-cd ~/homelab/04_services
+cd /opt/homelab
 make up-mastodon
 ```
 
@@ -89,7 +89,7 @@ sudo ss -tlnp | grep <ポート番号>
 初回のみ必要な手順が完了しているか確認します。
 
 ```bash
-docker compose -f compose/mastodon.yml run --rm web bundle exec rails db:setup
+docker compose --env-file .env -f compose/mastodon.yml run --rm mastodon-web bundle exec rails db:setup
 ```
 
 ### メールが届かない
@@ -106,7 +106,7 @@ SendGrid 等の外部 SMTP サービスの API キーが正しく設定されて
 初回のみ設定ファイルの生成が必要です。
 
 ```bash
-docker compose -f compose/element.yml run --rm synapse generate
+docker compose --env-file .env -f compose/element.yml run --rm synapse generate
 ```
 
 ### フェデレーションができない
@@ -157,6 +157,6 @@ sudo ufw status
 
 1. 新しいサーバに Ubuntu Server 26.04 LTS をインストール
 2. `git clone git@github.com:zoobookfool/homelab.git`
-3. `01_initial_setup` から順番に Ansible を実行
+3. `docs/setup.md` の手順に従って Ansible を実行
 4. バックアップデータを `/opt/homelab/` に展開
-5. `make up-core` でサービスを起動
+5. `cd /opt/homelab && make up-all` でサービスを起動
