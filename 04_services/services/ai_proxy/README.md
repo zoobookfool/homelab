@@ -34,12 +34,19 @@ Tailscale 経由でアクセスできるよう、Ollama のリッスンアドレ
 export OLLAMA_HOST=0.0.0.0
 ```
 
+> ⚠️ `0.0.0.0` は Tailscale だけでなく PC の全ネットワークインターフェース（LAN・場合によっては WAN）で
+> Ollama の API（認証なし）を待ち受ける設定です。自宅ルーターのポート開放・UPnP 等で
+> 11434 番ポートが外部に転送されていないこと、また LAN 内の他端末からのアクセスを許容してよいかを確認してください。
+> より厳密に絞りたい場合は `0.0.0.0` の代わりに PC の Tailscale IP（`100.x.x.x`）を指定すると、
+> Tailscale 経由のアクセスのみに制限できます。
+
 ### 2. 環境変数を設定
 
-`/opt/homelab/.env` に Ollama が動いている PC の Tailscale IP を設定します。
+`/opt/homelab/.env` に Ollama が動いている PC の Tailscale IP とポート番号を設定します。
 
 ```
-AI_PROXY_UPSTREAM=http://<自宅PCのTailscale IP>:11434
+LOCAL_PC_TAILSCALE_IP=<自宅PCのTailscale IP>
+OLLAMA_PORT=11434
 ```
 
 ### 3. 起動

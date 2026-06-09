@@ -97,6 +97,7 @@ VPS / AWS のみ
 | [02_tailscale](./02_tailscale/README.md) | Tailscale 導入・UFW ロックダウン | ○ | ○（アプリサーバ） |
 | [03_docker](./03_docker/README.md) | Docker・Docker Compose 導入 | ○ | ○ |
 | [04_services](./04_services/README.md) | サービスの起動 | ○ | ○ |
+| [05_nginx](./05_nginx/README.md) | アプリサーバの Nginx・SSL 設定 | ○ | — |
 | [05_relay](./05_relay/README.md) | 踏み台の Nginx・UFW 設定 | — | ○（踏み台サーバ） |
 
 > `06_backup` はバックアップ設定です。運用開始後に設定してください。
