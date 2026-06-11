@@ -30,7 +30,7 @@ ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_homelab -C "homelab"
 | 手順 0 | `01_network/ansible/inventory.ini` の `[app_init]` | 初期接続 IP・ユーザー名 |
 | 手順 0 | `03_proxy/ansible/playbook.yml` の `vars` | ドメイン・踏み台 IP・リレー有無（手順 3 前に設定） |
 | 手順 1a 完了後 | `01_network/ansible/inventory.ini` の `[app]` | `ansible_host=` に Tailscale IP を記入 |
-| 手順 1a 完了後 | `02_services/.env` の `DOCKER_BIND_IP` | Tailscale IP を設定 |
+| 手順 1a 完了後 | `02_services/.env` の `DOCKER_BIND_IP`（ゲーム使用時は `GAME_BIND_IP` も） | Tailscale IP を設定 |
 
 ---
 
@@ -124,6 +124,16 @@ DOCKER_BIND_IP=127.0.0.1
 DOCKER_BIND_IP=100.x.x.x  ← アプリサーバの Tailscale IP
 ```
 
+ゲームサーバ（Factorio / Windrose）を使う場合は `GAME_BIND_IP` も設定します。
+
+```
+# パターンA（直接公開）
+GAME_BIND_IP=          ← 空欄のまま
+
+# パターンB（踏み台でリレー）
+GAME_BIND_IP=100.x.x.x ← アプリサーバの Tailscale IP（実 IP の露出を防ぐ）
+```
+
 ### 1b. UFW ロックダウン
 
 ```bash
@@ -148,6 +158,10 @@ Ansible がファイルのデプロイ → Mastodon / Element の初期化 → `
 
 ドメインなし・Tailscale 経由のみでアクセスするサービスはこの手順は不要です。
 
+> ⚠️ 実行前に、使用する各サブドメイン（`mastodon.` `element.` `matrix.` `monitoring.` `ai.`）の
+> DNS A レコードを公開サーバ（パターンA: アプリサーバ / パターンB: 踏み台サーバ）に向けておいてください。
+> パターンA では Let's Encrypt の証明書取得（Ansible が自動実行）に DNS 設定が必須です。
+
 ### Cloudflare Origin Certificate の準備（パターンB のみ）
 
 Cloudflare ダッシュボード → **SSL/TLS → Origin Server → Create Certificate** で証明書を生成し、ローカルに保存します。
@@ -160,14 +174,23 @@ mkdir -p ~/.ssl
 
 ### 03_proxy/ansible/playbook.yml の vars を設定
 
-**パターンA（アプリサーバに Nginx を設定）:**
+**パターンA（アプリサーバに Nginx を設定）— 1つ目のプレイの vars:**
 
 ```yaml
 vars:
   domain: "example.com"
+  certbot_email: "you@example.com"   # Let's Encrypt の期限通知用
+  certbot_subdomains:                # 使わないサービスは削る
+    - mastodon
+    - element
+    - matrix
+    - monitoring
+    - ai
 ```
 
-**パターンB（踏み台サーバに Nginx を設定）:**
+> 証明書の取得・自動更新は Ansible 実行時に Certbot が処理します。
+
+**パターンB（踏み台サーバに Nginx を設定）— 2つ目のプレイの vars:**
 
 ```yaml
 vars:
