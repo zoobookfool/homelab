@@ -19,9 +19,10 @@ echo "[$(date)] バックアップ開始: ${BACKUP_FILE}"
 
 mkdir -p "${BACKUP_DEST}"
 
-tar -czf "${BACKUP_FILE}" -C / \
-  --exclude="${BACKUP_SRC}/monitoring/prometheus" \
-  "$(basename ${BACKUP_SRC})"
+# -C で親ディレクトリに移動するため、--exclude も tar 内の相対パスで指定する
+tar -czf "${BACKUP_FILE}" -C "$(dirname "${BACKUP_SRC}")" \
+  --exclude="$(basename "${BACKUP_SRC}")/monitoring/prometheus" \
+  "$(basename "${BACKUP_SRC}")"
 
 echo "[$(date)] バックアップ完了: ${BACKUP_FILE}"
 echo "[$(date)] サイズ: $(du -sh ${BACKUP_FILE} | cut -f1)"

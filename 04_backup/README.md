@@ -60,6 +60,10 @@
 
 `scripts/backup.sh` を使って `/opt/homelab/` を tar で固めます。
 
+> ⚠️ PostgreSQL（Mastodon・Element）が書き込み中のデータディレクトリをそのまま tar すると
+> 不整合なバックアップになることがあります。確実を期すなら `make down` でサービスを
+> 停止してから実行してください。
+
 ```bash
 # 自宅サーバ上で実行
 sudo bash ~/homelab/04_backup/scripts/backup.sh
@@ -91,8 +95,8 @@ scp -i ~/.ssh/id_ed25519_homelab \
 cd /opt/homelab
 make down
 
-# 2. バックアップを展開
-sudo tar -xzf /opt/backup/homelab_<日時>.tar.gz -C /
+# 2. バックアップを展開（アーカイブは homelab/ から始まるため /opt に展開する）
+sudo tar -xzf /opt/backup/homelab_<日時>.tar.gz -C /opt
 
 # 3. サービスを再起動
 make up-all
