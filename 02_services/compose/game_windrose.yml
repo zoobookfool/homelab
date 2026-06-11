@@ -12,7 +12,10 @@ services:
     volumes:
       - /opt/homelab/game/windrose:/server/R5/Saved
     ports:
-      - "${WINDROSE_PORT}:${WINDROSE_PORT}/udp"
+      # GAME_BIND_IP は .env で設定（パターンA: 空欄=全公開 / パターンB: Tailscale IP）
+      # 踏み台の UDP+TCP リレー（stream_windrose.conf.j2）に合わせ両プロトコルを公開する
+      - "${GAME_BIND_IP:-0.0.0.0}:${WINDROSE_PORT}:${WINDROSE_PORT}/udp"
+      - "${GAME_BIND_IP:-0.0.0.0}:${WINDROSE_PORT}:${WINDROSE_PORT}/tcp"
     networks:
       - windrose
 

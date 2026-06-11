@@ -10,7 +10,8 @@ services:
     volumes:
       - /opt/homelab/game/factorio:/factorio
     ports:
-      - "34197:34197/udp"
+      # GAME_BIND_IP は .env で設定（パターンA: 空欄=全公開 / パターンB: Tailscale IP）
+      - "${GAME_BIND_IP:-0.0.0.0}:34197:34197/udp"
     networks:
       - factorio
 
