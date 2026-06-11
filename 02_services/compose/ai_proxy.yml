@@ -9,7 +9,8 @@ services:
       - LOCAL_PC_TAILSCALE_IP=${LOCAL_PC_TAILSCALE_IP}
       - OLLAMA_PORT=${OLLAMA_PORT}
     volumes:
-      - ../services/ai_proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # *.template は nginx イメージが起動時に環境変数を展開して conf.d へ出力する
+      - ../services/ai_proxy/default.conf.template:/etc/nginx/templates/default.conf.template:ro
     ports:
       - "${DOCKER_BIND_IP:-127.0.0.1}:11435:11435"
     networks:

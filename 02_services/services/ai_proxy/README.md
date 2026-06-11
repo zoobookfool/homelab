@@ -75,4 +75,4 @@ https://ai.<ドメイン名>/api/generate
 ```
 
 > ⚠️ 外部公開する場合は認証を追加することを強く推奨します。
-> `services/ai_proxy/nginx.conf.example` を参考に Basic 認証等を設定してください。
+> `services/ai_proxy/default.conf.template` に Basic 認証等を設定してください。

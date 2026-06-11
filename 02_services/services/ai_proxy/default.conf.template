@@ -1,5 +1,7 @@
 # ローカルPC（自宅PC）の Ollama へのリバースプロキシ
 # LOCAL_PC_TAILSCALE_IP と OLLAMA_PORT は .env で設定する
+# /etc/nginx/templates/ に置かれた *.template は nginx イメージが
+# コンテナ起動時に環境変数を展開して /etc/nginx/conf.d/ へ出力する
 
 server {
     listen 11435;
