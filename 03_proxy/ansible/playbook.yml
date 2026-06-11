@@ -2,10 +2,24 @@
 # ---- パターンA: アプリサーバに直接 Nginx を設定 ----
 # inventory.ini に [app] を記載して実行する
 # UFW に HTTP/HTTPS を追加し、Nginx + Certbot をインストールする
+# 実行前に各サブドメインの A レコードがこのサーバを向いていること
 
 - name: パターンA - アプリサーバ Nginx セットアップ
   hosts: app
   become: true
+
+  vars:
+    # ---- 必須 ----
+    domain: ""             # 例: example.com
+    certbot_email: ""      # Let's Encrypt の期限通知用メールアドレス
+
+    # 証明書を取得するサブドメイン（使わないサービスは削って OK）
+    certbot_subdomains:
+      - mastodon
+      - element
+      - matrix
+      - monitoring
+      - ai
 
   roles:
     - ufw_app

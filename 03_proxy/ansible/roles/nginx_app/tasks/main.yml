@@ -18,6 +18,17 @@
     state: started
     enabled: true
 
+# 事前に各サブドメインの A レコードがこのサーバを向いている必要がある。
+# 取得後の更新は certbot パッケージ付属の systemd タイマーが自動で行う。
+- name: Let's Encrypt 証明書を取得（初回のみ）
+  command: >
+    certbot certonly --nginx --non-interactive --agree-tos
+    -m {{ certbot_email }}
+    --cert-name {{ domain }}
+    {% for sub in certbot_subdomains %} -d {{ sub }}.{{ domain }}{% endfor %}
+  args:
+    creates: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+
 - name: Nginx 設定ファイルを配置
   template:
     src: "{{ item }}.conf.j2"
@@ -33,9 +44,3 @@
 - name: Nginx の設定テスト
   command: nginx -t
   changed_when: false
-
-handlers:
-  - name: nginx reload
-    systemd:
-      name: nginx
-      state: reloaded
