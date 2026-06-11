@@ -10,8 +10,19 @@
     state: started
     enabled: true
 
+# tailscaled.state はデーモン起動だけで作成されるため、creates では参加済み判定にならない。
+# tailscale status は未参加（ログアウト・停止）時に非ゼロを返すことを利用する
+- name: Tailscale の参加状態を確認
+  command: tailscale status
+  register: tailscale_status
+  failed_when: false
+  changed_when: false
+
+- name: 未参加かつ Auth Key 未指定の場合は中止
+  fail:
+    msg: "踏み台が Tailscale に未参加です。-e tailscale_auth_key=<Auth Key> を指定して再実行してください。"
+  when: tailscale_status.rc != 0 and (tailscale_auth_key | default('') | length == 0)
+
 - name: Tailscale でネットワークに参加
   command: tailscale up --authkey={{ tailscale_auth_key }} --accept-routes
-  args:
-    creates: /var/lib/tailscale/tailscaled.state
-  when: tailscale_auth_key | default('') | length > 0
+  when: tailscale_status.rc != 0
