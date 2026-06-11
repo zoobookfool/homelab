@@ -38,11 +38,14 @@ services:
     container_name: mastodon-web
     restart: unless-stopped
     command: bundle exec puma -C config/puma.rb
-    env_file: ../.env
     environment:
       - LOCAL_DOMAIN=mastodon.${DOMAIN}
       - SECRET_KEY_BASE=${MASTODON_SECRET_KEY_BASE}
       - OTP_SECRET=${MASTODON_OTP_SECRET}
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY}
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT}
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY}
+      - TRUSTED_PROXY_IP=${TRUSTED_PROXY_IP}
       - VAPID_PRIVATE_KEY=${MASTODON_VAPID_PRIVATE_KEY}
       - VAPID_PUBLIC_KEY=${MASTODON_VAPID_PUBLIC_KEY}
       - DB_HOST=mastodon-db
@@ -71,7 +74,6 @@ services:
     image: ghcr.io/mastodon/mastodon-streaming:latest
     container_name: mastodon-streaming
     restart: unless-stopped
-    env_file: ../.env
     environment:
       - LOCAL_DOMAIN=mastodon.${DOMAIN}
       - DB_HOST=mastodon-db
@@ -79,6 +81,7 @@ services:
       - DB_USER=mastodon
       - DB_PASS=${MASTODON_DB_PASSWORD}
       - REDIS_URL=redis://mastodon-redis:6379
+      - TRUSTED_PROXY_IP=${TRUSTED_PROXY_IP}
     ports:
       - "${DOCKER_BIND_IP:-127.0.0.1}:4000:4000"
     depends_on:
@@ -94,11 +97,16 @@ services:
     container_name: mastodon-sidekiq
     restart: unless-stopped
     command: bundle exec sidekiq
-    env_file: ../.env
     environment:
       - LOCAL_DOMAIN=mastodon.${DOMAIN}
       - SECRET_KEY_BASE=${MASTODON_SECRET_KEY_BASE}
       - OTP_SECRET=${MASTODON_OTP_SECRET}
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY}
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT}
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY}
+      - TRUSTED_PROXY_IP=${TRUSTED_PROXY_IP}
+      - VAPID_PRIVATE_KEY=${MASTODON_VAPID_PRIVATE_KEY}
+      - VAPID_PUBLIC_KEY=${MASTODON_VAPID_PUBLIC_KEY}
       - DB_HOST=mastodon-db
       - DB_NAME=mastodon
       - DB_USER=mastodon
