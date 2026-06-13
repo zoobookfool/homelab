@@ -4,6 +4,12 @@
 
 ### 事前準備（未設定の場合のみ）
 
+**Git のインストール**
+
+```bash
+sudo apt update && sudo apt install -y git
+```
+
 **Ansible のインストール**
 
 ```bash
@@ -62,7 +68,7 @@ rm 02_services/compose/game_windrose.yml
 
 ```bash
 cp 02_services/.env.example 02_services/.env
-vi 02_services/.env
+nano 02_services/.env
 ```
 
 使うサービスのセクションだけ埋めます。使わないサービスの項目は空欄のままで構いません。
@@ -95,6 +101,15 @@ EOF
 ---
 
 ## 1. Tailscale 網を構築する（アプリサーバ）
+
+### Auth Key を取得する
+
+1. [Tailscale 管理画面の Keys ページ](https://login.tailscale.com/admin/settings/keys) を開く
+2. **Generate auth key** をクリック
+3. 必要に応じて設定して生成する
+   - **Reusable**: パターンB で踏み台サーバにも同じキーを使う場合は ON にする（OFF だと1台目で使い切り、2台目は別キーが必要）
+   - **Expiration**: 1日に短縮する。インストール用の一時的なキーなので、使い終わったら無効になるようにしておく
+4. 生成された `tskey-auth-...` から始まる文字列をコピーする（画面を閉じると再表示できないので注意）
 
 ### 1a. OS 初期設定 + Tailscale インストール
 
