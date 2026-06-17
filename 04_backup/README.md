@@ -58,11 +58,11 @@
 
 ## 手動バックアップ（現時点の手順）
 
-`scripts/backup.sh` を使って `/opt/homelab/` を tar で固めます。
+`scripts/backup.sh` を使って `/opt/homelab/` と PostgreSQL dump を tar で固めます。
 
-> ⚠️ PostgreSQL（Mastodon・Element）が書き込み中のデータディレクトリをそのまま tar すると
-> 不整合なバックアップになることがあります。確実を期すなら `make down` でサービスを
-> 停止してから実行してください。
+Mastodon / Element の DB コンテナが起動している場合は `pg_dump` を作成し、
+`mastodon/postgres` と `element/postgres` の生データディレクトリはアーカイブから除外します。
+DB コンテナが起動していない場合は dump を作れないため、生データディレクトリをそのまま含めます。
 
 ```bash
 # 自宅サーバ上で実行
@@ -74,6 +74,14 @@ sudo bash ~/homelab/04_backup/scripts/backup.sh
 ```
 /opt/backup/
 └── homelab_20260101_120000.tar.gz
+```
+
+アーカイブ内には、利用できた場合のみ以下の dump が含まれます。
+
+```text
+db_dumps/
+├── mastodon.dump
+└── synapse.dump
 ```
 
 ### バックアップを自宅 PC に転送する（暫定）
@@ -95,10 +103,23 @@ scp -i ~/.ssh/id_ed25519_homelab \
 cd /opt/homelab
 make down
 
-# 2. バックアップを展開（アーカイブは homelab/ から始まるため /opt に展開する）
-sudo tar -xzf /opt/backup/homelab_<日時>.tar.gz -C /opt
+# 2. バックアップを一時ディレクトリに展開
+sudo mkdir -p /opt/restore
+sudo tar -xzf /opt/backup/homelab_<日時>.tar.gz -C /opt/restore
 
-# 3. サービスを再起動
+# 3. ファイルを戻す
+sudo rsync -a --delete /opt/restore/homelab/ /opt/homelab/
+
+# 4. PostgreSQL dump がある場合は DB を復元
+cd /opt/homelab
+docker compose --env-file .env -f compose/mastodon.yml up -d mastodon-db
+docker compose --env-file .env -f compose/element.yml up -d synapse-db
+
+# dump ファイルが存在するサービスだけ実行してください
+docker exec -i mastodon-db pg_restore -U mastodon -d mastodon --clean --if-exists < /opt/restore/db_dumps/mastodon.dump
+docker exec -i synapse-db pg_restore -U synapse -d synapse --clean --if-exists < /opt/restore/db_dumps/synapse.dump
+
+# 5. サービスを再起動
 make up-all
 ```
 

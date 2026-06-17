@@ -149,7 +149,13 @@ make down
 make logs-mastodon
 make logs-monitoring
 # ... など
+
+# 現在の Docker イメージを記録
+make snapshot-versions
 ```
+
+Ansible によるデプロイ後、実際に使われた Docker イメージは
+`/opt/homelab/deployed_images.txt` に記録されます。
 
 ---
 

@@ -11,7 +11,9 @@
       file:
         path: /opt/homelab/game/windrose
         state: directory
-        mode: '0777'
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
 
     - name: services ファイルをサーバに同期（Dockerfile 更新を反映）
       become: true

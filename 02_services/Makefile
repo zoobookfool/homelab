@@ -19,6 +19,10 @@ ALL_SERVICES = $(addprefix -f ,$(wildcard compose/*.yml))
 up-all:
 	$(COMPOSE) $(ALL_SERVICES) up -d
 
+.PHONY: snapshot-versions
+snapshot-versions:
+	$(COMPOSE) $(ALL_SERVICES) images > deployed_images.txt
+
 .PHONY: down
 down:
 	$(COMPOSE) $(ALL_SERVICES) down

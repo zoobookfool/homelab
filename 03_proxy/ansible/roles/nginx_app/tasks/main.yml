@@ -1,4 +1,12 @@
 ---
+- name: パターンAの必須変数を確認
+  assert:
+    that:
+      - domain | length > 0
+      - certbot_email | length > 0
+      - certbot_subdomains | length > 0
+    fail_msg: "パターンAでは domain, certbot_email, certbot_subdomains を設定してください。パターンBだけ実行する場合は --limit relay を付けてください。"
+
 - name: Nginx をインストール
   apt:
     name: nginx

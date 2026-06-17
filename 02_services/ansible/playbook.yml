@@ -32,6 +32,7 @@
   become: true
   vars:
     deploy_path: /opt/homelab
+    env_path: "{{ playbook_dir }}/../.env"
 
   tasks:
 
@@ -39,7 +40,7 @@
 
     - name: .env の存在を確認（ローカル）
       stat:
-        path: "{{ playbook_dir }}/../.env"
+        path: "{{ env_path }}"
       register: env_file
       delegate_to: localhost
       become: false
@@ -48,6 +49,12 @@
       fail:
         msg: "02_services/.env が見つかりません。.env.example をコピーして設定してから再実行してください。"
       when: not env_file.stat.exists
+
+    - name: .env を読み込む（ローカル）
+      set_fact:
+        _env_content: "{{ lookup('file', env_path) }}"
+      delegate_to: localhost
+      become: false
 
     - name: mastodon.yml の存在を確認（ローカル）
       stat:
@@ -109,12 +116,14 @@
 
     - name: 監視データディレクトリを作成
       file:
-        path: "{{ item }}"
+        path: "{{ item.path }}"
         state: directory
-        mode: '0777'
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: '0750'
       loop:
-        - "{{ deploy_path }}/monitoring/prometheus"
-        - "{{ deploy_path }}/monitoring/grafana"
+        - { path: "{{ deploy_path }}/monitoring/prometheus", owner: "65534", group: "65534" }
+        - { path: "{{ deploy_path }}/monitoring/grafana", owner: "472", group: "472" }
 
     # ── Mastodon 初期化 ─────────────────────────────────────────────────
 
@@ -150,8 +159,8 @@
 
             - name: ローカル .env から Mastodon 管理者情報を取得
               set_fact:
-                _mastodon_admin_user: "{{ lookup('pipe', 'grep -E \"^MASTODON_ADMIN_USERNAME=\" ' + playbook_dir + '/../.env | cut -d= -f2') }}"
-                _mastodon_admin_email: "{{ lookup('pipe', 'grep -E \"^MASTODON_ADMIN_EMAIL=\" ' + playbook_dir + '/../.env | cut -d= -f2') }}"
+                _mastodon_admin_user: "{{ (_env_content | regex_search('(?m)^MASTODON_ADMIN_USERNAME=(.*)$', '\\1') | default([''], true) | first) }}"
+                _mastodon_admin_email: "{{ (_env_content | regex_search('(?m)^MASTODON_ADMIN_EMAIL=(.*)$', '\\1') | default([''], true) | first) }}"
 
             - name: Mastodon 管理者アカウントを作成
               command: >
@@ -196,12 +205,13 @@
 
             - name: ローカル .env から Synapse DB パスワードを取得
               set_fact:
-                _synapse_db_password: "{{ lookup('pipe', 'grep -E \"^SYNAPSE_DB_PASSWORD=\" ' + playbook_dir + '/../.env | cut -d= -f2') }}"
+                _synapse_db_password: "{{ (_env_content | regex_search('(?m)^SYNAPSE_DB_PASSWORD=(.*)$', '\\1') | default([''], true) | first) }}"
 
             - name: homeserver.yaml のデータベース設定を PostgreSQL に変更
               shell: |
                 python3 << 'PYEOF'
                 import re, os
+                import json
                 path = '{{ deploy_path }}/element/synapse/homeserver.yaml'
                 pwd = os.environ['SYNAPSE_DB_PASSWORD']
                 with open(path) as f:
@@ -211,7 +221,7 @@
                     '  name: psycopg2',
                     '  args:',
                     '    user: synapse',
-                    '    password: ' + pwd,
+                    '    password: ' + json.dumps(pwd),
                     '    database: synapse',
                     '    host: synapse-db',
                     '    cp_min: 5',
@@ -238,7 +248,7 @@
 
             - name: ローカル .env から Matrix サーバ名を取得
               set_fact:
-                _matrix_server_name: "{{ lookup('pipe', 'grep -E \"^MATRIX_SERVER_NAME=\" ' + playbook_dir + '/../.env | cut -d= -f2') }}"
+                _matrix_server_name: "{{ (_env_content | regex_search('(?m)^MATRIX_SERVER_NAME=(.*)$', '\\1') | default([''], true) | first) }}"
 
             - name: Element config.json を example からコピー
               copy:
@@ -270,3 +280,9 @@
       command: make up-all
       args:
         chdir: "{{ deploy_path }}"
+
+    - name: デプロイ時の Docker イメージを記録する
+      command: make snapshot-versions
+      args:
+        chdir: "{{ deploy_path }}"
+      changed_when: false

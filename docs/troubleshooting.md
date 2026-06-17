@@ -27,6 +27,25 @@ sudo tailscale up --authkey=<新しいAuth Key>
 
 ## Ansible
 
+### `03_proxy` を片側だけ再実行したい
+
+`03_proxy/ansible/playbook.yml` はパターンA（app）とパターンB（relay）の両方を含みます。
+通常は inventory に存在するホストへまとめて適用できますが、踏み台だけ修正したい場合や
+アプリサーバ側の `domain` / `certbot_email` をまだ設定していない場合は `--limit relay` を付けます。
+
+```bash
+ansible-playbook -i 01_network/ansible/inventory.ini 03_proxy/ansible/playbook.yml \
+  --limit relay \
+  -e "tailscale_auth_key=<Auth Key>"
+```
+
+アプリサーバ側だけを再実行する場合は `--limit app` を使います。
+
+```bash
+ansible-playbook -i 01_network/ansible/inventory.ini 03_proxy/ansible/playbook.yml \
+  --limit app
+```
+
 ### `UNREACHABLE` エラーが出る
 
 ```
@@ -79,6 +98,29 @@ make up-mastodon
 ```bash
 sudo ss -tlnp | grep <ポート番号>
 ```
+
+### ゲームサーバのポートが外部に見えている
+
+Docker の `ports` で公開したポートは、環境によって UFW の通常ルールより前に処理されることがあります。
+そのため UFW で inbound を deny にしていても、`0.0.0.0` に bind した Docker ポートが外部から見える場合があります。
+
+Factorio / Windrose は直接公開する用途もあるため、`.env` の `GAME_BIND_IP` が空欄の場合は
+`0.0.0.0` として全インターフェースで待ち受けます。
+
+```bash
+cd /opt/homelab
+docker compose --env-file .env -f compose/game_factorio.yml config | grep -A5 "ports:"
+docker compose --env-file .env -f compose/game_windrose.yml config | grep -A8 "ports:"
+```
+
+踏み台サーバ経由で公開する場合は、アプリサーバの実 IP でゲームポートが開かないように
+`GAME_BIND_IP` をアプリサーバの Tailscale IP に設定してください。
+
+```env
+GAME_BIND_IP=100.x.x.x
+```
+
+直接公開しない場合は、対象の compose ファイルを削除するか、ゲームサーバを起動しないでください。
 
 ---
 
