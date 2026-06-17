@@ -120,7 +120,8 @@ docker compose --env-file .env -f compose/game_windrose.yml config | grep -A8 "p
 GAME_BIND_IP=100.x.x.x
 ```
 
-直接公開しない場合は、対象の compose ファイルを削除するか、ゲームサーバを起動しないでください。
+直接公開しない想定なのにポートが見えている場合は、セットアップ時に残した compose ファイルと、
+実行した `make up-*` / `make up-all` の対象を確認してください。
 
 ---
 
